@@ -33,6 +33,7 @@ const MAX_TABS_PER_DAY = 100;
 async function init() {
   initGreeting();
   initDateDisplay();
+  initSearch();
   await renderDashboard();
 }
 
@@ -71,6 +72,11 @@ document.addEventListener('click', async (e) => {
   if (action === 'focus-tab') {
     if (tabUrl) {
       await focusTabByUrl(tabUrl);
+      // Hide search results
+      const searchResults = document.getElementById('searchResults');
+      if (searchResults) searchResults.style.display = 'none';
+      const searchInput = document.getElementById('searchInput');
+      if (searchInput) searchInput.value = '';
     }
     return;
   }
@@ -992,6 +998,80 @@ function initDateDisplay() {
   const el = document.getElementById('dateDisplay');
   if (!el) return;
   el.textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+// Search
+function initSearch() {
+  const searchInput = document.getElementById('searchInput');
+  const searchClear = document.getElementById('searchClear');
+  const searchResults = document.getElementById('searchResults');
+
+  if (!searchInput) return;
+
+  searchInput.addEventListener('input', (e) => {
+    const query = e.target.value.trim().toLowerCase();
+    if (searchClear) {
+      searchClear.style.display = query ? 'flex' : 'none';
+    }
+    if (!query) {
+      if (searchResults) searchResults.style.display = 'none';
+      return;
+    }
+    performSearch(query);
+  });
+
+  if (searchClear) {
+    searchClear.addEventListener('click', () => {
+      if (searchInput) searchInput.value = '';
+      if (searchClear) searchClear.style.display = 'none';
+      if (searchResults) searchResults.style.display = 'none';
+    });
+  }
+
+  // Close search results when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.header-search')) {
+      if (searchResults) searchResults.style.display = 'none';
+    }
+  });
+}
+
+async function performSearch(query) {
+  const searchResults = document.getElementById('searchResults');
+  if (!searchResults) return;
+
+  try {
+    const allTabs = await chrome.tabs.query({});
+    const realTabs = allTabs.filter(t => t.url && !isSystemUrl(t.url));
+
+    const matches = realTabs.filter(tab => {
+      const title = (tab.title || '').toLowerCase();
+      const url = (tab.url || '').toLowerCase();
+      return title.includes(query) || url.includes(query);
+    }).slice(0, 10);
+
+    if (matches.length === 0) {
+      searchResults.innerHTML = '<div class="search-no-results">No tabs found</div>';
+    } else {
+      searchResults.innerHTML = matches.map(tab => {
+        const hostname = extractHostname(tab.url) || '';
+        return `
+          <div class="search-result-item" data-action="focus-tab" data-tab-url="${escapeHtml(tab.url)}">
+            <img src="https://www.google.com/s2/favicons?domain=${escapeHtml(hostname)}&sz=32" alt="" onerror="this.style.display='none'">
+            <div class="search-result-info">
+              <div class="search-result-title">${escapeHtml(tab.title || tab.url)}</div>
+              <div class="search-result-url">${escapeHtml(tab.hostname || '')}</div>
+            </div>
+            <span class="search-result-badge">${escapeHtml(hostname)}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    searchResults.style.display = 'block';
+  } catch (err) {
+    console.error('[coretab] Search failed:', err);
+  }
 }
 
 // Toast

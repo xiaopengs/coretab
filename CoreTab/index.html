@@ -15,7 +15,7 @@
 <div class="container">
 
   <!-- ================================================================
-       HEADER — CoreTab logo, greeting, and settings
+       HEADER — CoreTab logo, greeting, search and settings
        ================================================================ -->
   <header>
     <div class="header-left">
@@ -33,6 +33,20 @@
       </div>
       <h1 id="greeting">Good morning</h1>
       <div class="date" id="dateDisplay"></div>
+    </div>
+    <div class="header-search">
+      <div class="search-box">
+        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+        </svg>
+        <input type="text" id="searchInput" placeholder="Search tabs..." autocomplete="off">
+        <button class="search-clear" id="searchClear" style="display:none">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="search-results" id="searchResults" style="display:none"></div>
     </div>
     <button class="settings-btn" id="settingsBtn" aria-label="Settings">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">

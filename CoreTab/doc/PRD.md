@@ -69,6 +69,7 @@ CoreTab 是一款 Chrome 扩展，替代浏览器默认新标签页，提供：
 | Logo + 名称 | 品牌标识 |
 | 问候语 | 根据时间显示 Good morning/afternoon/evening |
 | 日期 | 显示当前日期 |
+| 搜索框 | 全局搜索已打开的标签页 |
 | 设置按钮 | 预留功能入口 |
 
 #### 2.2.2 Open Tabs 区域

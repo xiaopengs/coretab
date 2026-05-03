@@ -88,16 +88,18 @@ body {
 header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 40px;
   padding-bottom: 28px;
   border-bottom: 1.5px dashed var(--oat-border);
+  gap: 20px;
 }
 
 .header-left {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  flex-shrink: 0;
 }
 
 .logo {
@@ -135,6 +137,152 @@ header .date {
   text-transform: uppercase;
 }
 
+.header-search {
+  flex: 1;
+  max-width: 400px;
+  position: relative;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  background: var(--pure-white);
+  border: 1px solid var(--oat-border);
+  border-radius: var(--radius-pill);
+  padding: 0 16px;
+  transition: all 0.2s ease;
+}
+
+.search-box:focus-within {
+  border-color: var(--matcha-600);
+  box-shadow: 0 0 0 3px rgba(7, 138, 82, 0.1);
+}
+
+.search-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--warm-silver);
+  flex-shrink: 0;
+}
+
+#searchInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 12px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--clay-black);
+  outline: none;
+}
+
+#searchInput::placeholder {
+  color: var(--warm-silver);
+}
+
+.search-clear {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: var(--oat-light);
+  color: var(--warm-silver);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.search-clear:hover {
+  background: var(--pomegranate-400);
+  color: white;
+}
+
+.search-clear svg {
+  width: 14px;
+  height: 14px;
+}
+
+.search-results {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: var(--pure-white);
+  border: 1px solid var(--oat-border);
+  border-radius: var(--radius-card);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 100;
+}
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  border-bottom: 1px solid var(--oat-light);
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.search-result-item:hover {
+  background: var(--oat-light);
+}
+
+.search-result-item img {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.search-result-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.search-result-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--clay-black);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-result-url {
+  font-size: 11px;
+  color: var(--warm-silver);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-result-badge {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--warm-silver);
+  background: var(--oat-light);
+  padding: 2px 8px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.search-no-results {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--warm-silver);
+  font-size: 13px;
+}
+
 .settings-btn {
   width: 48px;
   height: 48px;
@@ -149,6 +297,7 @@ header .date {
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
               box-shadow 0.25s ease,
               border-color 0.25s ease;
+  flex-shrink: 0;
 }
 
 .settings-btn:hover {
@@ -1392,8 +1541,19 @@ header { animation: fadeUp 0.5s ease both; }
     padding: 32px 20px 80px;
   }
 
+  header {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
   header h1 {
     font-size: 26px;
+  }
+
+  .header-search {
+    order: 3;
+    max-width: none;
+    width: 100%;
   }
 }
 
@@ -1405,6 +1565,27 @@ header { animation: fadeUp 0.5s ease both; }
   .domain-chips {
     flex-direction: column;
   }
+
+  header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .header-left {
+    width: 100%;
+  }
+
+  .settings-btn {
+    position: absolute;
+    top: 0;
+    right: 0;
+  }
+
+  header {
+    position: relative;
+    padding-right: 60px;
+  }
+}
 
   .domain-chip {
     max-width: 100%;
