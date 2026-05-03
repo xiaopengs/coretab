@@ -57,6 +57,27 @@
   </header>
 
   <!-- ================================================================
+       RECENT TABS — Recently visited important pages (feishu, notion, etc.)
+       ================================================================ -->
+  <div class="recent-section" id="recentSection">
+    <div class="section-header">
+      <h2>Recent Tabs</h2>
+      <div class="section-line"></div>
+      <div class="section-count" id="recentSectionCount"></div>
+    </div>
+    <div id="recentTabsContainer"></div>
+    <div class="recent-empty" id="recentEmpty" style="display:none">
+      <div class="empty-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+        </svg>
+      </div>
+      <div class="empty-title">No recent tabs</div>
+      <div class="empty-subtitle">Feishu docs, Notion pages you visit will appear here.</div>
+    </div>
+  </div>
+
+  <!-- ================================================================
        CURRENT TABS — Domain grouped cards (mission-card style)
        ================================================================ -->
   <div class="active-section" id="openTabsSection">

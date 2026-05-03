@@ -1,4 +1,4 @@
-# CoreTab PRD - 产品需求文档 (v2.1)
+# CoreTab PRD - 产品需求文档 (v2.2)
 
 > 新标签页替代 + 标签管理 + 历史记录 + Closed Tabs
 
@@ -10,6 +10,7 @@ CoreTab 是一款 Chrome 扩展，替代浏览器默认新标签页，提供：
 - **Closed Tabs** - 记录已关闭的标签，按日期和网站分组，可一键找回
 - **历史记录** - 按网站分组浏览历史
 - **快速操作** - 一键关闭所有标签
+- **搜索功能** - 同时搜索打开和已关闭的标签页（标题+URL）
 - **GitHub Trending** - 展示热门 GitHub 项目
 
 ### 1.2 目标用户
@@ -69,7 +70,7 @@ CoreTab 是一款 Chrome 扩展，替代浏览器默认新标签页，提供：
 | Logo + 名称 | 品牌标识 |
 | 问候语 | 根据时间显示 Good morning/afternoon/evening |
 | 日期 | 显示当前日期 |
-| 搜索框 | 全局搜索已打开的标签页 |
+| 搜索框 | 全局搜索已打开的标签页和已关闭的标签页（搜索标题+URL） |
 | 设置按钮 | 预留功能入口 |
 
 #### 2.2.2 Open Tabs 区域
@@ -79,6 +80,8 @@ CoreTab 是一款 Chrome 扩展，替代浏览器默认新标签页，提供：
 | Tab 数量徽章 | 显示每个域名的标签数 |
 | 单标签操作 | 点击打开，悬停显示关闭按钮 |
 | 域名级别关闭 | Close X tabs 关闭该域名下所有标签 |
+| 特殊页面支持 | chrome://newtab/ 和 chrome://extensions/ 页面也会显示 |
+| 自标签过滤 | 总是过滤掉当前CoreTab标签页自己 |
 
 #### 2.2.3 Closed Tabs 区域 (新增)
 | 功能 | 描述 |
@@ -198,6 +201,17 @@ Open Tabs 刷新显示
 显示 Toast 提示
 ```
 
+### 3.6 搜索标签页
+```
+用户在搜索框输入关键词
+    ↓
+同时搜索 Open Tabs（标题+URL）和 Closed Tabs（标题+URL）
+    ↓
+合并显示搜索结果，Open Tabs 在前，Closed Tabs 在后（标记[Closed]）
+    ↓
+点击 Open Tabs 结果聚焦标签页，点击 Closed Tabs 结果恢复标签页
+```
+
 ---
 
 ## 4. 数据规格
@@ -215,6 +229,14 @@ Open Tabs 刷新显示
 const SYSTEM_URL_PREFIXES = [
   'chrome://', 'chrome-extension://', 'about:',
   'edge://', 'brave://', 'devtools://'
+];
+
+// 例外：这些chrome://页面会显示在Open Tabs中
+const ALLOWED_CHROME_PAGES = [
+  'chrome://newtab/',
+  'chrome://newtab',
+  'chrome://extensions/',
+  'chrome://extensions'
 ];
 ```
 
@@ -243,7 +265,7 @@ const SYSTEM_URL_PREFIXES = [
 
 ### 4.4 GitHub Trending API
 - URL: `https://api.github.com/search/repositories?q=stars:>1000&sort=stars&order=desc&per_page=6`
-- 缓存: localStorage，5分钟 TTL
+- 缓存: localStorage，24小时TTL
 
 ---
 
@@ -257,12 +279,17 @@ const SYSTEM_URL_PREFIXES = [
 - [ ] Close All Tabs 关闭所有非系统标签
 - [ ] 刷新按钮更新标签列表
 - [ ] Show more 展开历史记录
+- [ ] 搜索功能同时搜索Open Tabs和Closed Tabs（标题+URL）
+- [ ] 点击"全部关闭"后确认对话框正常关闭，页面可正常响应
+- [ ] chrome://newtab/ 和 chrome://extensions/ 页面正确显示在Open Tabs中
+- [ ] 当前CoreTab标签页总是被过滤掉，不显示在Open Tabs中
 
 ### 5.2 交互反馈
 - [ ] Toast 通知显示操作结果
 - [ ] 确认对话框防止误操作
 - [ ] 按钮悬停动画
 - [ ] 空状态显示
+- [ ] 搜索结果区分Open Tabs和Closed Tabs（Closed标签显示红色[Closed]徽章）
 
 ### 5.3 设计规范
 - [ ] Clay/Swatch Palette 设计系统
@@ -277,11 +304,12 @@ const SYSTEM_URL_PREFIXES = [
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
+| 2.2.0 | 2026-05-03 | 优化搜索功能（同时搜索Open/Closed Tabs）+ 修复确认对话框卡顿 + 优化标签页显示规则 |
 | 2.1.0 | 2026-05-03 | 新增 Closed Tabs + GitHub Trending 卡片展示 |
 | 1.1.0 | 2026-05-03 | 新标签页替代 + Clay 设计系统 |
 | 1.0.0 | 2026-03-21 | OneTab 风格标签管理 |
 
 ---
 
-*文档版本: 2.1*
+*文档版本: 2.2*
 *最后更新: 2026-05-03*

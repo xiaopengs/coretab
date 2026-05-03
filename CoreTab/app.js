@@ -19,15 +19,38 @@ const LANDING_PAGE_PATTERNS = [
 
 const GITHUB_API_URL = 'https://api.github.com/search/repositories?q=stars:>1000&sort=stars&order=desc&per_page=6';
 const GITHUB_CACHE_KEY = 'coretab_github_trending';
-const GITHUB_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const GITHUB_CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 
 const SYSTEM_URL_PREFIXES = [
   'chrome://', 'chrome-extension://', 'about:', 'edge://', 'brave://', 'devtools://'
 ];
 
+// 例外：这些chrome://页面应该显示在opentabs下面
+const ALLOWED_CHROME_PAGES = [
+  'chrome://newtab/',
+  'chrome://newtab',
+  'chrome://extensions/',
+  'chrome://extensions'
+];
+
 const CLOSED_TABS_KEY = 'coretab_closed_tabs';
 const MAX_TABS_PER_DOMAIN = 20;
 const MAX_TABS_PER_DAY = 100;
+
+// Recent Tabs
+const RECENT_TABS_KEY = 'coretab_recent_tabs';
+const RECENT_TABS_CONFIG_KEY = 'coretab_recent_config';
+const RECENT_TRACKED_DOMAINS = [
+  'feishu.cn',
+  'larksuite.com',
+  'notion.so',
+  'docs.google.com',
+  'drive.google.com',
+  'slides.google.com',
+  'sheets.google.com'
+];
+const RECENT_MAX_PER_DOMAIN = 10;
+const RECENT_MAX_TOTAL = 50;
 
 // Initialization
 async function init() {
@@ -41,6 +64,7 @@ async function renderDashboard() {
   await Promise.all([
     loadOpenTabs(),
     loadClosedTabs(),
+    loadRecentTabs(),
     loadHistory(),
     loadGitHubTrending()
   ]);
@@ -126,6 +150,14 @@ document.addEventListener('click', async (e) => {
     return;
   }
 
+  // ---- Open recent tab ----
+  if (action === 'open-recent') {
+    if (tabUrl) {
+      await focusTabByUrl(tabUrl);
+    }
+    return;
+  }
+
   // ---- Toggle history expand ----
   if (action === 'toggle-history') {
     toggleHistoryCard(actionEl);
@@ -204,11 +236,15 @@ async function focusTabByUrl(targetUrl) {
     } catch {}
   }
 
-  if (matches.length === 0) return;
-
-  const match = matches.find(t => t.windowId !== currentWindow.id) || matches[0];
-  await chrome.tabs.update(match.id, { active: true });
-  await chrome.windows.update(match.windowId, { focused: true });
+  if (matches.length > 0) {
+    // 找到已打开的标签页，聚焦它
+    const match = matches.find(t => t.windowId !== currentWindow.id) || matches[0];
+    await chrome.tabs.update(match.id, { active: true });
+    await chrome.windows.update(match.windowId, { focused: true });
+  } else {
+    // 没找到已打开的标签页，在新标签页中打开
+    await chrome.tabs.create({ url: targetUrl, active: true });
+  }
 }
 
 // Close single tab by URL (matches tab-out behavior)
@@ -407,9 +443,30 @@ async function loadOpenTabs() {
 
     console.log('[coretab] Total tabs found:', tabs.length);
     console.log('[coretab] Current window ID:', currentWindow.id);
+    console.log('[coretab] Current tab ID:', currentTab?.id);
 
-    const realTabs = tabs
-      .filter(t => t.url && !isSystemUrl(t.url))
+    // 调试：打印所有标签页信息，看看哪些被过滤了
+    console.log('[coretab] All tabs:');
+    tabs.forEach((t, i) => {
+      const isSystem = isSystemUrl(t.url);
+      const isCurrentTab = currentTab?.id === t.id;
+      console.log(`  ${i + 1}. [${isSystem ? 'SYSTEM' : 'NORMAL'}] [${isCurrentTab ? 'CURRENT' : ''}] ${t.title} - ${t.url}`);
+    });
+
+    // 先找出所有非系统的标签页
+    const nonSystemTabs = tabs
+      .filter(t => t.url && !isSystemUrl(t.url));
+    
+    // 过滤掉当前标签页（CoreTab自己）
+    const realTabs = nonSystemTabs
+      .filter(t => {
+        const isCurrentTab = currentTab?.id === t.id;
+        // 总是过滤掉自己这个标签页
+        if (isCurrentTab) {
+          return false;
+        }
+        return true;
+      })
       .map(t => ({
         id: t.id,
         url: t.url,
@@ -636,10 +693,25 @@ function getClosedTabsGrouped() {
     const domains = [];
     for (const hostname in closedTabs[dateKey]) {
       if (closedTabs[dateKey][hostname].length > 0) {
+        // 对于new-tab这种特殊页面，做去重处理
+        let entries = closedTabs[dateKey][hostname];
+        if (hostname === 'new-tab' || hostname === 'extensions') {
+          // 先去重，保留每个URL的最新一条
+          const seenUrls = new Set();
+          const uniqueEntries = [];
+          for (const entry of entries) {
+            if (!seenUrls.has(entry.url)) {
+              seenUrls.add(entry.url);
+              uniqueEntries.push(entry);
+            }
+          }
+          // 再限制数量，最多保留1个（因为这类页面内容都一样）
+          entries = uniqueEntries.slice(0, 1);
+        }
         domains.push({
           domain: hostname,
           label: friendlyDomain(hostname),
-          entries: closedTabs[dateKey][hostname]
+          entries: entries
         });
       }
     }
@@ -655,11 +727,22 @@ function getClosedTabsGrouped() {
 // URL Utilities
 function isSystemUrl(url) {
   if (!url) return true;
+  // 先检查是否是允许的页面
+  if (ALLOWED_CHROME_PAGES.some(p => url === p)) {
+    return false;
+  }
   return SYSTEM_URL_PREFIXES.some(p => url.startsWith(p));
 }
 
 function extractHostname(url) {
   if (!url) return null;
+  // 处理允许的chrome页面
+  if (url === 'chrome://newtab/' || url === 'chrome://newtab') {
+    return 'new-tab';
+  }
+  if (url === 'chrome://extensions/' || url === 'chrome://extensions') {
+    return 'extensions';
+  }
   try {
     if (url.startsWith('file://')) return 'local-files';
     return new URL(url).hostname.replace(/^www\./, '');
@@ -780,7 +863,18 @@ function renderOpenTabs(groups) {
 
   if (!container) return;
 
-  if (groups.length === 0) {
+  // 收集所有网站（不考虑窗口，直接扁平化）
+  const allDomains = [];
+  for (const wg of groups) {
+    for (const domain of wg.domains) {
+      allDomains.push({
+        ...domain,
+        windowId: wg.windowId
+      });
+    }
+  }
+
+  if (allDomains.length === 0) {
     container.style.display = 'none';
     empty.style.display = 'flex';
     return;
@@ -789,51 +883,42 @@ function renderOpenTabs(groups) {
   container.style.display = 'block';
   empty.style.display = 'none';
 
-  container.innerHTML = groups.map(wg => {
-    const totalTabs = wg.domains.reduce((sum, d) => sum + d.tabs.length, 0);
-    return `
-    <div class="window-card">
-      <div class="window-card-header">
-        <div class="window-info">
-          <span class="window-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <rect x="3" y="3" width="18" height="18" rx="2"/>
-              <path d="M3 9h18"/>
-            </svg>
-          </span>
-          <span class="window-name">${escapeHtml(wg.label)}</span>
-          <span class="window-count">${totalTabs} tabs</span>
-        </div>
-        <button class="action-btn close-window-btn compact" data-action="close-window" data-window-id="${wg.windowId}">
-          Close all
-        </button>
+  container.innerHTML = allDomains.map(g => `
+    <div class="mission-card">
+      <div class="mission-top">
+        <span class="mission-name">${escapeHtml(g.label)}</span>
+        <span class="open-tabs-badge">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
+          </svg>
+          ${g.tabs.length} tabs
+        </span>
       </div>
-      <div class="window-card-domains">
-        ${wg.domains.map(g => `
-          <div class="domain-section">
-            <div class="domain-header">
-              <span class="domain-name">${escapeHtml(g.label)}</span>
-              <span class="domain-count">${g.tabs.length}</span>
-            </div>
-            <div class="domain-chips">
-              ${g.tabs.slice(0, 8).map(t => `
-                <div class="domain-chip" data-action="focus-tab" data-tab-url="${escapeHtml(t.url)}" title="${escapeHtml(smartTitle(t.title, t.url))}">
-                  <img class="chip-favicon" src="https://www.google.com/s2/favicons?domain=${escapeHtml(t.hostname)}&sz=16" alt="" onerror="this.style.display='none'">
-                  <span class="chip-text">${escapeHtml(smartTitle(t.title, t.url))}</span>
-                  <button class="chip-close" data-action="close-tab" data-tab-url="${escapeHtml(t.url)}">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
-                    </svg>
-                  </button>
-                </div>
-              `).join('')}
-              ${g.tabs.length > 8 ? `<span class="domain-chip-overflow">+${g.tabs.length - 8}</span>` : ''}
+      <div class="mission-pages">
+        ${g.tabs.map(t => `
+          <div class="page-chip" data-action="focus-tab" data-tab-url="${escapeHtml(t.url)}" title="${escapeHtml(smartTitle(t.title, t.url))}">
+            <img class="chip-favicon" src="https://www.google.com/s2/favicons?domain=${escapeHtml(t.hostname)}&sz=16" alt="" onerror="this.style.display='none'">
+            <span class="chip-text">${escapeHtml(smartTitle(t.title, t.url))}</span>
+            <div class="chip-actions">
+              <button class="chip-action chip-close" data-action="close-tab" data-tab-url="${escapeHtml(t.url)}" aria-label="Close tab">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
+                </svg>
+              </button>
             </div>
           </div>
         `).join('')}
       </div>
+      <div class="actions">
+        <button class="action-btn close-tabs" data-action="close-domain" data-domain="${escapeHtml(g.domain)}" data-window-id="${g.windowId}">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
+          </svg>
+          Close all
+        </button>
+      </div>
     </div>
-  `}).join('');
+  `).join('');
 }function renderHistory(groups) {
   const container = document.getElementById('historyList');
   const empty = document.getElementById('historyEmpty');
@@ -952,6 +1037,173 @@ function renderClosedTabs(groups) {
       </div>
     </div>
   `).join('');
+}
+
+// ============================================================
+// RECENT TABS
+// ============================================================
+
+// Check if a URL should be tracked
+function shouldTrackUrl(url) {
+  if (!url) return false;
+  try {
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname;
+    // Check if hostname matches any of the tracked domains
+    return RECENT_TRACKED_DOMAINS.some(domain => {
+      if (domain.includes('*')) {
+        // Simple wildcard support (e.g., *.example.com)
+        const wildcardDomain = domain.replace('*.', '');
+        return hostname === wildcardDomain || hostname.endsWith('.' + wildcardDomain);
+      }
+      return hostname === domain || hostname.endsWith('.' + domain);
+    });
+  } catch {
+    return false;
+  }
+}
+
+// Get recent tabs from storage
+function getRecentTabs() {
+  try {
+    const raw = localStorage.getItem(RECENT_TABS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+// Save recent tabs to storage
+function saveRecentTabs(tabs) {
+  try {
+    localStorage.setItem(RECENT_TABS_KEY, JSON.stringify(tabs));
+  } catch {}
+}
+
+// Add or update a tab visit
+function addRecentTab(url, title) {
+  if (!shouldTrackUrl(url)) return;
+
+  const hostname = extractHostname(url);
+  const now = Date.now();
+  let tabs = getRecentTabs();
+
+  // Check if tab already exists
+  const existingIndex = tabs.findIndex(t => t.url === url);
+  if (existingIndex !== -1) {
+    // Update existing tab
+    tabs[existingIndex].visitedAt = now;
+    tabs[existingIndex].visitCount = (tabs[existingIndex].visitCount || 1) + 1;
+    tabs[existingIndex].title = title || tabs[existingIndex].title;
+  } else {
+    // Add new tab
+    tabs.unshift({
+      url,
+      title: title || url,
+      hostname,
+      visitedAt: now,
+      visitCount: 1
+    });
+  }
+
+  // Sort by visitedAt (newest first)
+  tabs.sort((a, b) => b.visitedAt - a.visitedAt);
+
+  // Limit total tabs
+  tabs = tabs.slice(0, RECENT_MAX_TOTAL);
+
+  saveRecentTabs(tabs);
+}
+
+// Group recent tabs by domain
+function getRecentTabsGrouped() {
+  const tabs = getRecentTabs();
+
+  // Group by hostname
+  const groups = {};
+  for (const tab of tabs) {
+    if (!groups[tab.hostname]) {
+      groups[tab.hostname] = [];
+    }
+    groups[tab.hostname].push(tab);
+  }
+
+  // Convert to array and limit per domain
+  const domains = Object.keys(groups).map(hostname => ({
+    domain: hostname,
+    label: friendlyDomain(hostname),
+    entries: groups[hostname].slice(0, RECENT_MAX_PER_DOMAIN)
+  }));
+
+  // Sort by first tab's visit time
+  domains.sort((a, b) => b.entries[0].visitedAt - a.entries[0].visitedAt);
+
+  return domains;
+}
+
+// Load and render recent tabs
+async function loadRecentTabs() {
+  try {
+    const groups = getRecentTabsGrouped();
+    renderRecentTabs(groups);
+  } catch (err) {
+    console.error('[coretab] Failed to load recent tabs:', err);
+  }
+}
+
+// Render recent tabs
+function renderRecentTabs(groups) {
+  const container = document.getElementById('recentTabsContainer');
+  const empty = document.getElementById('recentEmpty');
+  const countEl = document.getElementById('recentSectionCount');
+
+  if (!container) return;
+
+  // Count total recent tabs
+  let totalRecent = 0;
+  for (const site of groups) {
+    totalRecent += site.entries.length;
+  }
+
+  if (totalRecent === 0) {
+    container.innerHTML = '';
+    empty.style.display = 'flex';
+    if (countEl) countEl.textContent = '';
+    return;
+  }
+
+  empty.style.display = 'none';
+  if (countEl) countEl.textContent = `${totalRecent} pages`;
+
+  container.innerHTML = `
+    <div class="recent-sites">
+      ${groups.map(site => `
+        <div class="recent-card">
+          <div class="recent-card-header">
+            <div class="recent-card-info">
+              <img class="recent-card-favicon" src="https://www.google.com/s2/favicons?domain=${escapeHtml(site.domain)}&sz=32" alt="" onerror="this.style.display='none'">
+              <span class="recent-card-name">${escapeHtml(site.label)}</span>
+              <span class="recent-card-badge">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+                ${site.entries.length}
+              </span>
+            </div>
+          </div>
+          <div class="recent-pages">
+            ${site.entries.slice(0, 5).map(entry => `
+              <div class="recent-page-item" data-action="open-recent" data-tab-url="${escapeHtml(entry.url)}">
+                <span class="recent-page-title">${escapeHtml(smartTitle(entry.title, entry.url))}</span>
+                <span class="recent-page-time">${timeAgo(entry.visitedAt)}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
 }
 
 function renderGitHubTrending(projects) {

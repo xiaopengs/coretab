@@ -489,9 +489,8 @@ header .date {
    WINDOW CARDS (Open Tabs - Compact Dashboard Layout)
    ============================================================ */
 .missions {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  columns: 280px;
+  column-gap: 14px;
   margin-bottom: 48px;
 }
 
@@ -703,6 +702,28 @@ header .date {
 /* ============================================================
    MISSION CARDS (Open Tabs - Legacy)
    ============================================================ */
+
+.mission-card {
+  background: var(--pure-white);
+  border: 1.5px solid var(--oat-border);
+  border-radius: var(--radius-card);
+  padding: 16px 18px;
+  margin-bottom: 14px;
+  break-inside: avoid;
+  position: relative;
+  overflow: hidden;
+}
+
+.mission-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--oat-border);
+  transition: background 0.2s ease;
+}
 
 .mission-card:hover::before {
   background: var(--matcha-600);
@@ -1391,6 +1412,148 @@ header .date {
 }
 
 /* ============================================================
+   RECENT TABS
+   ============================================================ */
+.recent-section {
+  margin-top: 40px;
+}
+
+.recent-sites {
+  columns: 280px;
+  column-gap: 14px;
+}
+
+.recent-card {
+  background: var(--pure-white);
+  border: 1px solid var(--oat-border);
+  border-radius: var(--radius-card);
+  padding: 16px 18px;
+  margin-bottom: 14px;
+  break-inside: avoid;
+}
+
+.recent-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.recent-card-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.recent-card-favicon {
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+}
+
+.recent-card-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--clay-black);
+}
+
+.recent-card-badge {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--warm-silver);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.recent-card-badge svg {
+  width: 10px;
+  height: 10px;
+}
+
+.recent-pages {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.recent-page-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: var(--radius-sharp);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.recent-page-item:hover {
+  background: var(--oat-light);
+}
+
+.recent-page-title {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--clay-black);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+  margin-right: 12px;
+}
+
+.recent-page-time {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--warm-silver);
+  flex-shrink: 0;
+}
+
+/* Recent empty state */
+.recent-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 48px 24px;
+  text-align: center;
+  background: var(--pure-white);
+  border: 1.5px dashed var(--oat-border);
+  border-radius: var(--radius-card);
+}
+
+.recent-empty .empty-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--oat-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--warm-silver);
+}
+
+.recent-empty .empty-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.recent-empty .empty-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--clay-black);
+  margin: 0;
+}
+
+.recent-empty .empty-subtitle {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--warm-silver);
+  margin: 0;
+}
+
+/* ============================================================
    GITHUB TRENDING
    ============================================================ */
 .github-section {
@@ -1600,21 +1763,22 @@ header .date {
 }
 
 header { animation: fadeUp 0.5s ease both; }
-.active-section .section-header { animation: fadeUp 0.5s ease 0.1s both; }
-.window-card:nth-child(1) { animation: fadeUp 0.4s ease 0.18s both; }
-.window-card:nth-child(2) { animation: fadeUp 0.4s ease 0.24s both; }
-.window-card:nth-child(3) { animation: fadeUp 0.4s ease 0.3s both; }
-.history-section .section-header { animation: fadeUp 0.5s ease 0.35s both; }
-.closed-section .section-header { animation: fadeUp 0.5s ease 0.38s both; }
-.github-section .section-header { animation: fadeUp 0.5s ease 0.4s both; }
-.github-section .github-card { animation: fadeUp 0.5s ease 0.45s both; }
+.recent-section .section-header { animation: fadeUp 0.5s ease 0.1s both; }
+.active-section .section-header { animation: fadeUp 0.5s ease 0.18s both; }
+.window-card:nth-child(1) { animation: fadeUp 0.4s ease 0.26s both; }
+.window-card:nth-child(2) { animation: fadeUp 0.4s ease 0.32s both; }
+.window-card:nth-child(3) { animation: fadeUp 0.4s ease 0.38s both; }
+.closed-section .section-header { animation: fadeUp 0.5s ease 0.42s both; }
+.history-section .section-header { animation: fadeUp 0.5s ease 0.46s both; }
+.github-section .section-header { animation: fadeUp 0.5s ease 0.5s both; }
+.github-section .github-card { animation: fadeUp 0.5s ease 0.56s both; }
 
 /* ============================================================
    RESPONSIVE
    ============================================================ */
 @media (max-width: 768px) {
   .missions {
-    gap: 16px;
+    columns: 1;
   }
 
   .history-missions {
