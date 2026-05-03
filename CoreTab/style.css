@@ -444,8 +444,8 @@ header .date {
    ============================================================ */
 .missions {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
-  gap: 32px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
   margin-bottom: 40px;
 }
 
@@ -453,6 +453,7 @@ header .date {
   background: var(--pure-white);
   border: 1px solid var(--oat-border);
   border-radius: var(--radius-card);
+  min-width: 0;
   overflow: hidden;
   box-shadow: var(--clay-shadow);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
