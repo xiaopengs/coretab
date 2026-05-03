@@ -372,6 +372,8 @@
       .philo-visual { order: -1; }
       .mockup-body { grid-template-columns: 1fr; }
       .mockup-sidebar { display: none; }
+      .install-grid { grid-template-columns: 1fr; }
+      .tips-grid { grid-template-columns: repeat(2, 1fr); }
       section { padding: 80px 0; }
     }
     @media (max-width: 767px) {
@@ -383,7 +385,73 @@
       .footer-inner { flex-direction: column; }
       .footer-links { gap: 32px; flex-wrap: wrap; }
       .cta-btn-group { flex-direction: column; }
+      .tips-grid { grid-template-columns: 1fr; }
     }
+
+    /* ========== INSTALL GUIDE ========== */
+    .install-section { background: var(--parchment); padding: 100px 0; border-top: 1px solid var(--border-cream); }
+    .install-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; max-width: 940px; margin: 0 auto; }
+    .install-steps { display: flex; flex-direction: column; gap: 20px; }
+    .install-step {
+      display: flex; gap: 18px; padding: 24px;
+      background: var(--ivory); border: 1px solid var(--border-cream);
+      border-radius: var(--radius-round); transition: all 0.22s ease;
+    }
+    .install-step:hover { border-color: var(--ring-warm); box-shadow: rgba(0,0,0,0.03) 0px 6px 20px; }
+    .step-num {
+      flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%;
+      background: var(--terracotta); color: var(--ivory);
+      font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; justify-content: center;
+    }
+    .step-content h4 { font-family: var(--font-sans); font-size: 1rem; font-weight: 600; margin-bottom: 6px; color: var(--near-black); }
+    .step-content p { font-size: 0.88rem; line-height: 1.6; color: var(--olive-gray); }
+    .step-code {
+      margin-top: 10px; padding: 10px 14px; background: var(--deep-dark); border-radius: var(--radius-subtle);
+      font-family: var(--font-mono); font-size: 0.8rem; color: #a8d4a8; overflow-x: auto;
+    }
+    .install-info { display: flex; flex-direction: column; gap: 20px; }
+    .info-card {
+      padding: 24px; background: var(--ivory); border: 1px solid var(--border-cream);
+      border-radius: var(--radius-round);
+    }
+    .info-card h4 { font-family: var(--font-sans); font-size: 0.95rem; font-weight: 600; margin-bottom: 12px; color: var(--near-black); display: flex; align-items: center; gap: 8px; }
+    .info-card h4 svg { width: 18px; height: 18px; color: var(--terracotta); }
+    .info-card ul { display: flex; flex-direction: column; gap: 8px; }
+    .info-card li { font-size: 0.87rem; line-height: 1.55; color: var(--charcoal-warm); display: flex; align-items: flex-start; gap: 8px; }
+    .info-card li::before { content: "·"; color: var(--terracotta); font-weight: bold; flex-shrink: 0; }
+
+    /* ========== USAGE TIPS ========== */
+    .tips-section { background: var(--warm-sand); padding: 90px 0; }
+    .tips-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 940px; margin: 48px auto 0; }
+    .tip-card {
+      padding: 28px 24px; background: var(--ivory);
+      border: 1px solid var(--border-cream); border-radius: var(--radius-round);
+      transition: all 0.22s ease;
+    }
+    .tip-card:hover { transform: translateY(-2px); box-shadow: rgba(0,0,0,0.04) 0px 8px 24px; }
+    .tip-card h4 { font-family: var(--font-sans); font-size: 1rem; font-weight: 600; margin-bottom: 10px; color: var(--near-black); }
+    .tip-card p { font-size: 0.87rem; line-height: 1.6; color: var(--olive-gray); }
+
+    /* ========== FAQ ========== */
+    .faq-section { background: var(--ivory); padding: 100px 0; border-top: 1px solid var(--border-cream); }
+    .faq-list { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+    .faq-item {
+      border: 1px solid var(--border-cream); border-radius: var(--radius-gen);
+      background: var(--pure-white); overflow: hidden; transition: all 0.2s ease;
+    }
+    .faq-item:hover { border-color: var(--ring-warm); }
+    .faq-q {
+      padding: 18px 22px; font-family: var(--font-sans); font-size: 0.95rem; font-weight: 600;
+      color: var(--near-black); cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+      gap: 12px;
+    }
+    .faq-q svg { width: 16px; height: 16px; color: var(--stone-gray); flex-shrink: 0; transition: transform 0.2s; }
+    .faq-item.open .faq-q svg { transform: rotate(45deg); }
+    .faq-a {
+      padding: 0 22px 18px; font-size: 0.88rem; line-height: 1.65; color: var(--olive-gray);
+      display: none;
+    }
+    .faq-item.open .faq-a { display: block; }
 
     /* ========== ANIMATIONS ========== */
     @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -406,10 +474,11 @@
       </div>
       <div class="nav-links">
         <a href="#features" class="nav-link">功能特性</a>
+        <a href="#install" class="nav-link">安装指南</a>
         <a href="#detail" class="nav-link">核心能力</a>
-        <a href="#about" class="nav-link">关于</a>
+        <a href="#faq" class="nav-link">常见问题</a>
         <button class="nav-cta">
-          立即使用
+          Clone 插件
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
         </button>
       </div>
@@ -431,7 +500,7 @@
         </p>
         <div class="hero-actions animate-in delay-2">
           <button class="btn-primary">
-            启动 CoreTab
+            Clone 插件
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
           </button>
           <button class="btn-secondary">
@@ -667,20 +736,195 @@
     </div>
   </section>
 
+  <!-- ===== INSTALL GUIDE ===== -->
+  <section class="install-section" id="install">
+    <div class="container">
+      <div class="section-header">
+        <span class="overline">快速上手</span>
+        <h2 class="heading-xl">三步完成本地安装</h2>
+        <p class="body-md">
+          CoreTab 以浏览器扩展形式运行，无需服务器，Clone 下来即可本地加载使用。
+        </p>
+      </div>
+
+      <div class="install-grid">
+        <!-- 左侧：步骤 -->
+        <div class="install-steps">
+          <div class="install-step">
+            <span class="step-num">1</span>
+            <div class="step-content">
+              <h4>克隆项目仓库</h4>
+              <p>从 Git 仓库将 CoreTab 项目克隆到本地：</p>
+              <code class="step-code">git clone https://github.com/coretab-new/CoreTab.git</code>
+            </div>
+          </div>
+          <div class="install-step">
+            <span class="step-num">2</span>
+            <div class="step-content">
+              <h4>打开浏览器扩展管理页</h4>
+              <p>在 Chrome / Edge 地址栏输入以下地址，开启「开发者模式」：</p>
+              <code class="step-code">chrome://extensions 或 edge://extensions</code>
+            </div>
+          </div>
+          <div class="install-step">
+            <span class="step-num">3</span>
+            <div class="step-content">
+              <h4>加载解压的扩展程序</h4>
+              <p>点击「加载已解压的扩展程序」，选择 Clone 下来的项目根目录。CoreTab 图标即刻出现在工具栏中，点击即可使用。</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右侧：说明信息 -->
+        <div class="install-info">
+          <div class="info-card">
+            <h4>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>
+              系统要求
+            </h4>
+            <ul>
+              <li>Chrome 88+ / Edge 88+ / Firefox 89+（支持 Manifest V3）</li>
+              <li>无需安装额外运行时或依赖包</li>
+              <li>Windows / macOS / Linux 全平台支持</li>
+            </ul>
+          </div>
+          <div class="info-card">
+            <h4>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              加载后即可用
+            </h4>
+            <ul>
+              <li>无需注册账号或登录任何服务</li>
+              <li>所有数据存储于浏览器本地（localStorage + chrome.storage）</li>
+              <li>卸载扩展即完全清除数据，不留残留</li>
+            </ul>
+          </div>
+          <div class="info-card">
+            <h4>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>
+              常见问题
+            </h4>
+            <ul>
+              <li>如遇图标未显示，请确认开发者模式已开启并刷新扩展列表</li>
+              <li>更新版本时重新点击「加载」同一目录即可热更新</li>
+              <li>Firefox 用户需在 about:debugging 中临时加载扩展</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== USAGE TIPS ===== -->
+  <section class="tips-section">
+    <div class="container">
+      <div class="section-header">
+        <span class="overline">使用技巧</span>
+        <h2 class="heading-xl">让效率翻倍的实用技巧</h2>
+        <p class="body-md">掌握这些用法，让你的标签页管理工作事半功倍。</p>
+      </div>
+
+      <div class="tips-grid">
+        <div class="tip-card">
+          <h4>善用域名聚合卡片</h4>
+          <p>同一网站的多个标签会自动归入一张卡片。鼠标悬停卡片可预览每个标签标题，点击 chip 即可跳转，右键可单独关闭或关闭整组。</p>
+        </div>
+        <div class="tip-card">
+          <h4>窗口分隔线快速定位</h4>
+          <p>全宽分割线将不同浏览器窗口的标签清晰分开，每条线上标注了该窗口的标签数量和域名数。点击分割线可聚焦到对应窗口。</p>
+        </div>
+        <div class="tip-card">
+          <h4>搜索框即时过滤</h4>
+          <p>打开 CoreTab 面板后直接键入关键词，无需点击搜索框。支持标题和 URL 的模糊匹配，按 Enter 可快速跳转到第一个匹配结果。</p>
+        </div>
+        <div class="tip-card">
+          <h4>最近关闭一键恢复</h4>
+          <p>误关标签？在侧边栏「最近关闭」面板中可以看到完整的关闭历史，支持单条恢复和全部恢复，记录保留当前会话周期。</p>
+        </div>
+        <div class="tip-card">
+          <h4>会话自动保存与恢复</h4>
+          <p>每次关闭或重启浏览器前，CoreTab 会自动快照当前所有窗口和标签的布局状态。重新打开浏览器时，可选择恢复上次会话。</p>
+        </div>
+        <div class="tip-card">
+          <h4>快捷键提升效率</h4>
+          <p>默认快捷键 Ctrl+Shift+T（可自定义）快速唤起 CoreTab 面板。在面板内可用上下箭头导航，Enter 跳转，Delete 关闭选中标签。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FAQ ===== -->
+  <section class="faq-section" id="faq">
+    <div class="container">
+      <div class="section-header">
+        <span class="overline">常见问题</span>
+        <h2 class="heading-xl">你可能想知道的</h2>
+      </div>
+
+      <div class="faq-list">
+        <div class="faq-item open">
+          <div class="faq-q">
+            CoreTab 支持哪些浏览器？
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+          </div>
+          <div class="faq-a">
+            CoreTab 基于 Manifest V3 标准构建，目前完整支持 Google Chrome 88+ 和 Microsoft Edge 88+。Firefox 89+ 通过临时加载方式也可使用，但部分 API（如侧边栏集成）可能存在差异。我们推荐使用 Chrome 或 Edge 以获得最佳体验。
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">
+            数据是否会上传到云端？
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+          </div>
+          <div class="faq-a">
+            完全不会。CoreTab 是一款纯本地运行的浏览器扩展，所有标签数据、分组信息、搜索历史均存储在你设备的浏览器本地存储中（chrome.storage.local）。我们不设服务器、不收集遥测、不要求联网授权。你的浏览数据只属于你。
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">
+            可以同时管理多少个标签页？
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+          </div>
+          <div class="faq-a">
+            理论上没有硬性上限。CoreTab 使用高效的增量渲染策略，实际测试中即使同时打开 200+ 标签页也能保持流畅操作。界面通过虚拟滚动和域名聚合机制确保大量标签下依然清晰可读。
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">
+            如何自定义快捷键和外观？
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+          </div>
+          <div class="faq-a">
+            点击 CoreTab 图标旁的设置齿轮进入设置面板，你可以自定义唤醒快捷键、调整主题亮度、切换紧凑/舒适布局模式，以及配置自动保存间隔等选项。设置项即时生效，无需重启。
+          </div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">
+            是否开源？如何参与贡献？
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+          </div>
+          <div class="faq-a">
+            CoreTab 采用 MIT 开源协议，欢迎社区贡献。你可以通过 GitHub 提交 Issue 报告问题，或提交 Pull Request 参与新功能开发。无论是代码贡献、文档完善还是多语言翻译，我们都非常欢迎。
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ===== CTA ===== -->
   <section class="cta-section">
     <div class="container">
       <div class="cta-content">
-        <h2 class="heading-lg">准备好驯服你的标签页了吗？</h2>
+        <h2 class="heading-lg">立即 Clone，开启有序浏览</h2>
         <p class="body-lg">
-          立即安装 CoreTab，体验为中文用户精心打造的标签页管理方案。
+          三步本地加载，无需注册，即刻拥有强大的标签页管理能力。
         </p>
         <div class="cta-btn-group">
           <button class="btn-dark-primary">
-            免费开始使用
+            Clone 并安装
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
           </button>
-          <button class="btn-outline-light">阅读完整文档</button>
+          <button class="btn-outline-light">查看安装指南</button>
         </div>
       </div>
     </div>
@@ -737,5 +981,16 @@
     </div>
   </footer>
 
+  <!-- FAQ Toggle Script -->
+  <script>
+    document.querySelectorAll('.faq-q').forEach(function(q) {
+      q.addEventListener('click', function() {
+        var item = this.parentElement;
+        var wasOpen = item.classList.contains('open');
+        document.querySelectorAll('.faq-item').forEach(function(i) { i.classList.remove('open'); });
+        if (!wasOpen) item.classList.add('open');
+      });
+    });
+  </script>
 </body>
 </html>
