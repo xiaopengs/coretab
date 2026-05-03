@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CoreTab - 标签页管理器</title>
+  <link rel="stylesheet" href="styles/tabs.css">
+</head>
+<body>
+  <div class="container">
+    <!-- 头部 -->
+    <header class="header">
+      <div class="header-left">
+        <h1 class="logo">CoreTab</h1>
+      </div>
+      <div class="header-right">
+        <button id="searchBtn" class="icon-btn" title="搜索">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.35-4.35"></path>
+          </svg>
+        </button>
+        <button id="importBtn" class="icon-btn" title="导入">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7,10 12,15 17,10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+        </button>
+        <button id="exportBtn" class="icon-btn" title="导出">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17,8 12,3 7,8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+        </button>
+        <button id="settingsBtn" class="icon-btn" title="设置">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+        <!-- 设置下拉菜单 -->
+        <div class="dropdown settings-dropdown">
+          <div class="dropdown-menu settings-menu" id="settingsDropdown" style="display: none;">
+            <button class="dropdown-item danger" id="clearAllBtn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3,6 5,6 21,6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              一键清空所有
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- 搜索栏 -->
+    <div class="search-bar" id="searchBar" style="display: none;">
+      <input type="text" id="searchInput" placeholder="搜索标签页...">
+      <button id="closeSearch" class="icon-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <!-- 主内容 -->
+    <main class="main-content">
+      <!-- 空状态 -->
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+            <polyline points="13,2 13,9 20,9"></polyline>
+          </svg>
+        </div>
+        <h2>暂无保存的标签页</h2>
+        <p>点击工具栏中的 CoreTab 图标<br>或按 <kbd>Ctrl+Shift+S</kbd> 保存当前所有标签页</p>
+      </div>
+
+      <!-- 标签页列表 -->
+      <div class="groups-container" id="groupsContainer"></div>
+    </main>
+
+    <!-- 统计栏 -->
+    <footer class="footer">
+      <div class="stats">
+        <span id="totalCount">共 0 个标签页</span>
+        <span class="divider">|</span>
+        <span id="groupCount">0 个分组</span>
+      </div>
+      <button id="restoreAllBtn" class="btn btn-text" style="display: none;">
+        全部还原
+      </button>
+    </footer>
+  </div>
+
+  <!-- 通知提示 -->
+  <div class="toast" id="toast"></div>
+
+  <!-- 确认对话框 -->
+  <div class="modal" id="confirmModal" style="display: none;">
+    <div class="modal-content">
+      <h3 id="confirmTitle">确认操作</h3>
+      <p id="confirmMessage">确定要执行此操作吗？</p>
+      <div class="modal-actions">
+        <button id="confirmCancel" class="btn btn-secondary">取消</button>
+        <button id="confirmOk" class="btn btn-danger">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="tabs.js"></script>
+</body>
+</html>

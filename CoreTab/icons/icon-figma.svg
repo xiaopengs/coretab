@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!-- Pure black background - Figma style -->
+  <rect width="128" height="128" rx="28" fill="#000000"/>
+
+  <!-- Abstract tab grouping - minimalist geometry -->
+  <g fill="#ffffff">
+    <!-- Tab stack effect - 3 tabs -->
+    <rect x="28" y="30" width="48" height="12" rx="6"/>
+    <rect x="28" y="46" width="60" height="12" rx="6"/>
+    <rect x="28" y="62" width="72" height="12" rx="6"/>
+
+    <!-- Bottom bar representing container -->
+    <rect x="28" y="82" width="72" height="8" rx="4"/>
+
+    <!-- Small circle accent - Figma's circle motif -->
+    <circle cx="100" cy="88" r="12"/>
+  </g>
+
+  <!-- Small accent dot -->
+  <circle cx="92" cy="38" r="4" fill="#ffffff" opacity="0.6"/>
+  <circle cx="100" cy="52" r="3" fill="#ffffff" opacity="0.4"/>
+</svg>

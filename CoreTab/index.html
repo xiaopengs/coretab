@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CoreTab</title>
+
+  <!-- Google Fonts: Newsreader (for headings/numbers) + DM Sans (for body text) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+
+  <!-- ================================================================
+       HEADER — CoreTab logo, greeting, and settings
+       ================================================================ -->
+  <header>
+    <div class="header-left">
+      <div class="logo">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="28" height="28" rx="6" fill="#078a52"/>
+          <g fill="#fff">
+            <rect x="6" y="7" width="16" height="3" rx="1.5"/>
+            <rect x="6" y="12" width="12" height="3" rx="1.5"/>
+            <rect x="6" y="17" width="16" height="3" rx="1.5"/>
+          </g>
+          <circle cx="21" cy="17" r="2.5" fill="#fc7981"/>
+        </svg>
+        <span class="logo-text">CoreTab</span>
+      </div>
+      <h1 id="greeting">Good morning</h1>
+      <div class="date" id="dateDisplay"></div>
+    </div>
+    <button class="settings-btn" id="settingsBtn" aria-label="Settings">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" />
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+      </svg>
+    </button>
+  </header>
+
+  <!-- ================================================================
+       CURRENT TABS — Domain grouped cards (mission-card style)
+       ================================================================ -->
+  <div class="active-section" id="openTabsSection">
+    <div class="section-header">
+      <h2>Open Tabs</h2>
+      <div class="section-line"></div>
+      <div class="section-count" id="openTabsSectionCount"></div>
+      <button class="action-btn close-all-inline" data-action="close-all-open-tabs">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+        </svg>
+        Close <span id="closeTabsCount">all</span> tabs
+      </button>
+    </div>
+    <div class="missions" id="openTabsMissions">
+      <!-- Example: GitHub domain card -->
+      <div class="mission-card has-active-bar">
+        <div class="mission-top">
+          <span class="mission-name">github.com</span>
+          <span class="open-tabs-badge">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
+            </svg>
+            5 tabs
+          </span>
+        </div>
+        <div class="mission-pages">
+          <div class="page-chip">
+            <img class="chip-favicon" src="https://www.google.com/favicon.ico" alt="">
+            <span class="chip-text">repository/tab-next</span>
+            <div class="chip-actions">
+              <button class="chip-action chip-close" aria-label="Close tab">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="page-chip">
+            <img class="chip-favicon" src="https://www.google.com/favicon.ico" alt="">
+            <span class="chip-text">repository/core-tab</span>
+            <div class="chip-actions">
+              <button class="chip-action chip-close" aria-label="Close tab">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="page-chip">
+            <img class="chip-favicon" src="https://www.google.com/favicon.ico" alt="">
+            <span class="chip-text">issues/123 - Bug fix needed</span>
+            <div class="chip-actions">
+              <button class="chip-action chip-close" aria-label="Close tab">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="action-btn close-tabs" data-action="close-domain" data-domain="github.com">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+            </svg>
+            Close All
+          </button>
+        </div>
+      </div>
+
+      <!-- Example: Google domain card -->
+      <div class="mission-card has-active-bar">
+        <div class="mission-top">
+          <span class="mission-name">google.com</span>
+          <span class="open-tabs-badge">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
+            </svg>
+            3 tabs
+          </span>
+        </div>
+        <div class="mission-pages">
+          <div class="page-chip">
+            <img class="chip-favicon" src="https://www.google.com/favicon.ico" alt="">
+            <span class="chip-text">Search results</span>
+            <div class="chip-actions">
+              <button class="chip-action chip-close" aria-label="Close tab">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="page-chip">
+            <img class="chip-favicon" src="https://www.google.com/favicon.ico" alt="">
+            <span class="chip-text">Google Docs</span>
+            <div class="chip-actions">
+              <button class="chip-action chip-close" aria-label="Close tab">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="action-btn close-tabs" data-action="close-domain" data-domain="google.com">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+            </svg>
+            Close All
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty state for open tabs -->
+    <div class="missions-empty-state" id="openTabsEmpty" style="display:none">
+      <div class="empty-checkmark">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+        </svg>
+      </div>
+      <div class="empty-title">All tabs closed</div>
+      <div class="empty-subtitle">Enjoy the calm.</div>
+    </div>
+  </div>
+
+  <!-- ================================================================
+       CLOSED TABS — Recently closed tabs grouped by date and site
+       ================================================================ -->
+  <div class="closed-section" id="closedSection">
+    <div class="section-header">
+      <h2>Closed Tabs</h2>
+      <div class="section-line"></div>
+      <div class="section-count" id="closedSectionCount"></div>
+    </div>
+    <div id="closedTabsContainer"></div>
+    <div class="closed-empty" id="closedEmpty" style="display:none">
+      <div class="empty-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75m6 0a3 3 0 0 1-3-3m3 3h.008v.008H17v-.008ZM9 19.5h6m-6-2h6a.75.75 0 0 1 0 1.5H9a.75.75 0 0 1 0-1.5ZM9 4.5h6m-6 0a3 3 0 0 1 3 3m-3-3a3 3 0 0 0-3 3m3-3H9a.75.75 0 0 0 0 1.5h6a.75.75 0 0 0 0-1.5H9Z" />
+        </svg>
+      </div>
+      <div class="empty-title">No closed tabs</div>
+      <div class="empty-subtitle">Tabs you close will appear here.</div>
+    </div>
+  </div>
+
+  <!-- ================================================================
+       GITHUB TRENDING — Hot projects from GitHub
+       ================================================================ -->
+  <div class="github-section" id="githubSection">
+    <div class="section-header">
+      <h2>GitHub Trending</h2>
+      <div class="section-line"></div>
+    </div>
+    <div class="github-grid" id="githubGrid">
+      <p>Loading...</p>
+    </div>
+  </div>
+
+  <!-- ================================================================
+       HISTORY — Browsing history grouped by website (mission-card style)
+       ================================================================ -->
+  <div class="history-section" id="historySection">
+    <div class="section-header">
+      <h2>History</h2>
+      <div class="section-line"></div>
+      <div class="section-count" id="historySectionCount"></div>
+    </div>
+    <div class="history-missions" id="historyList"></div>
+    <div class="history-empty" id="historyEmpty" style="display:none">
+      <div class="empty-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+        </svg>
+      </div>
+      <div class="empty-title">No history yet</div>
+      <div class="empty-subtitle">Your browsing history will appear here.</div>
+    </div>
+  </div>
+
+</div><!-- end .container -->
+
+<!-- ================================================================
+     TOAST — Notification popup
+     ================================================================ -->
+<div class="toast" id="toast">
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+  </svg>
+  <span id="toastText"></span>
+</div>
+
+<!-- ================================================================
+     CONFIRM DIALOG — Modal for destructive actions
+     ================================================================ -->
+<div class="confirm-dialog-overlay" id="confirmDialogOverlay" style="display:none">
+  <div class="confirm-dialog" id="confirmDialog">
+    <div class="confirm-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+      </svg>
+    </div>
+    <h3 class="confirm-title" id="confirmTitle">Confirm Action</h3>
+    <p class="confirm-message" id="confirmMessage">Are you sure you want to proceed?</p>
+    <div class="confirm-actions">
+      <button class="pill-btn secondary" data-action="close-dialog">Cancel</button>
+      <button class="pill-btn danger" data-action="close-confirm">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Main app logic -->
+<script src="app.js"></script>
+</body>
+</html>

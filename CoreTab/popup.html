@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CoreTab - 标签页管理器</title>
+  <link rel="stylesheet" href="styles/popup.css">
+</head>
+<body>
+  <div class="container">
+    <!-- 头部 -->
+    <header class="header">
+      <h1>CoreTab</h1>
+      <span class="subtitle">标签页管理器</span>
+    </header>
+
+    <!-- 操作按钮 -->
+    <div class="actions">
+      <button id="saveAllTabs" class="btn btn-primary">
+        <span class="icon">📥</span>
+        保存所有标签页
+      </button>
+      <button id="closeAllTabs" class="btn btn-danger">
+        <span class="icon">🗑️</span>
+        关闭所有标签页
+      </button>
+    </div>
+
+    <!-- 统计信息 -->
+    <div class="stats">
+      <span id="tabsCount">已保存 0 个标签页</span>
+    </div>
+
+    <!-- 标签页列表 -->
+    <div class="tab-list" id="tabList">
+      <div class="empty-state" id="emptyState">
+        <span class="empty-icon">📭</span>
+        <p>暂无保存的标签页</p>
+        <p class="hint">点击「保存所有标签页」按钮开始使用</p>
+      </div>
+    </div>
+
+    <!-- 批量操作 -->
+    <div class="batch-actions" id="batchActions" style="display: none;">
+      <label class="checkbox-label">
+        <input type="checkbox" id="selectAll">
+        <span>全选</span>
+      </label>
+      <button id="restoreSelected" class="btn btn-small">恢复选中</button>
+      <button id="deleteSelected" class="btn btn-small btn-danger">删除选中</button>
+    </div>
+
+    <!-- 底部 -->
+    <footer class="footer">
+      <button id="clearAll" class="btn btn-text">清空所有</button>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
