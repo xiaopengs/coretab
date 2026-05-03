@@ -736,10 +736,23 @@ header .date {
 
 .mission-top {
   display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.mission-title-row {
+  display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 8px;
   flex-wrap: wrap;
+}
+
+.mission-top .top-right {
+  margin-left: auto;
+  padding: 6px 14px;
+  font-size: 11px;
 }
 
 .mission-name {

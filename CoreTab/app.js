@@ -886,13 +886,21 @@ function renderOpenTabs(groups) {
   container.innerHTML = allDomains.map(g => `
     <div class="mission-card">
       <div class="mission-top">
-        <span class="mission-name">${escapeHtml(g.label)}</span>
-        <span class="open-tabs-badge">
+        <div class="mission-title-row">
+          <span class="mission-name">${escapeHtml(g.label)}</span>
+          <span class="open-tabs-badge">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
+            </svg>
+            ${g.tabs.length} tabs
+          </span>
+        </div>
+        <button class="action-btn close-all-inline top-right" data-action="close-domain" data-domain="${escapeHtml(g.domain)}" data-window-id="${g.windowId}">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
           </svg>
-          ${g.tabs.length} tabs
-        </span>
+          Close all
+        </button>
       </div>
       <div class="mission-pages">
         ${g.tabs.map(t => `
@@ -908,14 +916,6 @@ function renderOpenTabs(groups) {
             </div>
           </div>
         `).join('')}
-      </div>
-      <div class="actions">
-        <button class="action-btn close-tabs" data-action="close-domain" data-domain="${escapeHtml(g.domain)}" data-window-id="${g.windowId}">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
-          </svg>
-          Close all
-        </button>
       </div>
     </div>
   `).join('');
