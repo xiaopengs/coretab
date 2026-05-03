@@ -378,18 +378,18 @@ header .date {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 14px 28px;
+  padding: 12px 24px;
   font-family: inherit;
   font-size: 14px;
   font-weight: 500;
   letter-spacing: -0.1px;
   border-radius: var(--radius-pill);
-  border: 1.5px solid transparent;
+  border: 1.5px solid var(--clay-black);
   cursor: pointer;
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
               box-shadow 0.25s ease,
-              background 0.25s ease,
-              border-color 0.25s ease;
+              background 0.2s ease,
+              color 0.2s ease;
   white-space: nowrap;
 }
 
@@ -400,40 +400,40 @@ header .date {
 }
 
 .pill-btn.primary:hover {
-  transform: rotateZ(-2deg) scale(1.02);
-  box-shadow: var(--hover-shadow);
   background: var(--matcha-600);
   border-color: var(--matcha-600);
+  transform: rotateZ(-8deg) translateY(-80%);
+  box-shadow: rgb(0,0,0) -7px 7px;
 }
 
 .pill-btn.secondary {
   background: var(--pure-white);
   color: var(--clay-black);
-  border-color: var(--oat-border);
+  border-color: var(--clay-black);
 }
 
 .pill-btn.secondary:hover {
-  transform: rotateZ(-1deg) scale(1.01);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  border-color: var(--oat-dark);
   background: var(--oat-light);
+  border-color: var(--oat-dark);
+  transform: rotateZ(-8deg) translateY(-80%);
+  box-shadow: rgb(0,0,0) -7px 7px;
 }
 
 .pill-btn.danger {
-  background: var(--pomegranate-400);
-  color: var(--pure-white);
+  background: var(--pure-white);
+  color: var(--pomegranate-400);
   border-color: var(--pomegranate-400);
 }
 
 .pill-btn.danger:hover {
-  transform: rotateZ(-2deg) scale(1.02);
-  box-shadow: 0 6px 20px rgba(252, 121, 129, 0.3);
-  background: #e85a62;
-  border-color: #e85a62;
+  background: var(--pomegranate-400);
+  color: var(--pure-white);
+  transform: rotateZ(-8deg) translateY(-80%);
+  box-shadow: rgb(0,0,0) -7px 7px;
 }
 
 .pill-btn:focus-visible {
-  outline: 2px dashed var(--oat-dark);
+  outline: 2px dashed var(--clay-black);
   outline-offset: 3px;
 }
 
@@ -751,8 +751,6 @@ header .date {
 
 .mission-top .top-right {
   margin-left: auto;
-  padding: 6px 14px;
-  font-size: 11px;
 }
 
 .mission-name {
@@ -884,69 +882,67 @@ header .date {
 }
 
 .action-btn {
-  font-size: 11px;
+  font-size: 13px;
   font-family: inherit;
   font-weight: 500;
-  padding: 9px 18px;
+  padding: 10px 20px;
   border-radius: var(--radius-pill);
-  border: 1.5px solid var(--oat-border);
+  border: 1.5px solid var(--clay-black);
   background: var(--pure-white);
   color: var(--clay-black);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  letter-spacing: -0.05px;
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
-              box-shadow 0.25s ease,
-              background 0.2s ease,
-              border-color 0.2s ease;
+  justify-content: center;
+  gap: 8px;
+  letter-spacing: -0.1px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .action-btn:hover {
-  transform: rotateZ(-1deg) scale(1.01);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  border-color: var(--oat-dark);
-  background: var(--oat-light);
+  background: var(--clay-black);
+  color: var(--pure-white);
+  transform: translateY(-1px);
 }
 
 .action-btn:focus-visible {
-  outline: 2px dashed var(--oat-dark);
+  outline: 2px dashed var(--clay-black);
   outline-offset: 2px;
 }
 
 .action-btn:active {
-  transform: scale(0.98);
+  transform: translateY(0) scale(0.98);
 }
 
 .action-btn svg {
-  width: 12px;
-  height: 12px;
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
 }
 
 .action-btn.close-tabs {
-  border-color: var(--oat-border);
+  border-color: var(--clay-black);
 }
 
 .action-btn.close-all-inline {
   font-size: 11px;
-  padding: 7px 16px;
+  padding: 5px 12px;
   color: var(--pomegranate-400);
-  border-color: rgba(252, 121, 129, 0.35);
-  background: rgba(252, 121, 129, 0.06);
+  border: 1px solid var(--pomegranate-400);
+  border-radius: 6px;
+  background: transparent;
   font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .action-btn.close-all-inline:hover {
-  background: rgba(252, 121, 129, 0.12);
-  border-color: rgba(252, 121, 129, 0.6);
-  color: var(--pomegranate-400);
-  transform: none;
-  box-shadow: none;
+  background: var(--pomegranate-400);
+  color: var(--pure-white);
 }
 
 .action-btn.close-all-inline:active {
-  background: rgba(252, 121, 129, 0.18);
+  transform: translateY(0) scale(0.98);
 }
 
 /* ============================================================
