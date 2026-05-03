@@ -856,25 +856,16 @@ function formatNumber(num) {
   return String(num);
 }
 
-function renderOpenTabs(groups) {
+function renderOpenTabs(windowGroups) {
   const container = document.getElementById('openTabsMissions');
-  const section = document.getElementById('openTabsSection');
   const empty = document.getElementById('openTabsEmpty');
 
   if (!container) return;
 
-  // 收集所有网站（不考虑窗口，直接扁平化）
-  const allDomains = [];
-  for (const wg of groups) {
-    for (const domain of wg.domains) {
-      allDomains.push({
-        ...domain,
-        windowId: wg.windowId
-      });
-    }
-  }
+  // 计算总域名数
+  const totalDomains = windowGroups.reduce((sum, wg) => sum + wg.domains.length, 0);
 
-  if (allDomains.length === 0) {
+  if (totalDomains === 0) {
     container.style.display = 'none';
     empty.style.display = 'flex';
     return;
@@ -883,42 +874,67 @@ function renderOpenTabs(groups) {
   container.style.display = 'block';
   empty.style.display = 'none';
 
-  container.innerHTML = allDomains.map(g => `
-    <div class="mission-card">
-      <div class="mission-top">
-        <div class="mission-title-row">
-          <span class="mission-name">${escapeHtml(g.label)}</span>
-          <span class="open-tabs-badge">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
-            </svg>
-            ${g.tabs.length} tabs
-          </span>
-        </div>
-        <button class="action-btn close-all-inline top-right" data-action="close-domain" data-domain="${escapeHtml(g.domain)}" data-window-id="${g.windowId}">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
-          </svg>
-          Close all
-        </button>
-      </div>
-      <div class="mission-pages">
-        ${g.tabs.map(t => `
-          <div class="page-chip" data-action="focus-tab" data-tab-url="${escapeHtml(t.url)}" title="${escapeHtml(smartTitle(t.title, t.url))}">
-            <img class="chip-favicon" src="https://www.google.com/s2/favicons?domain=${escapeHtml(t.hostname)}&sz=16" alt="" onerror="this.style.display='none'">
-            <span class="chip-text">${escapeHtml(smartTitle(t.title, t.url))}</span>
-            <div class="chip-actions">
-              <button class="chip-action chip-close" data-action="close-tab" data-tab-url="${escapeHtml(t.url)}" aria-label="Close tab">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
-                </svg>
-              </button>
-            </div>
+  // 按窗口分组渲染，每组之间用全宽 tag 分割线分隔
+  container.innerHTML = windowGroups.map((wg, wgIndex) => {
+    const windowLabel = wg.isCurrent ? 'Current Window' : `Window ${wgIndex + 1}`;
+    const windowTabCount = wg.domains.reduce((sum, d) => sum + d.tabs.length, 0);
+    const domainCount = wg.domains.length;
+
+    const domainsHtml = wg.domains.map(g => `
+      <div class="mission-card">
+        <div class="mission-top">
+          <div class="mission-title-row">
+            <span class="mission-name">${escapeHtml(g.label)}</span>
+            <span class="open-tabs-badge">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
+              </svg>
+              ${g.tabs.length} tabs
+            </span>
           </div>
-        `).join('')}
+          <button class="action-btn close-all-inline top-right" data-action="close-domain" data-domain="${escapeHtml(g.domain)}" data-window-id="${wg.windowId}">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
+            </svg>
+            Close all
+          </button>
+        </div>
+        <div class="mission-pages">
+          ${g.tabs.map(t => `
+            <div class="page-chip" data-action="focus-tab" data-tab-url="${escapeHtml(t.url)}" title="${escapeHtml(smartTitle(t.title, t.url))}">
+              <img class="chip-favicon" src="https://www.google.com/s2/favicons?domain=${escapeHtml(t.hostname)}&sz=16" alt="" onerror="this.style.display='none'">
+              <span class="chip-text">${escapeHtml(smartTitle(t.title, t.url))}</span>
+              <div class="chip-actions">
+                <button class="chip-action chip-close" data-action="close-tab" data-tab-url="${escapeHtml(t.url)}" aria-label="Close tab">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
       </div>
-    </div>
-  `).join('');
+    `).join('');
+
+    // 窗口分割线：全宽 tag 样式，横跨整个区域
+    const dividerHtml = `
+      <div class="window-divider">
+        <span class="window-divider-tag">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />
+          </svg>
+          ${windowLabel}
+          <span class="window-tab-count">${windowTabCount} tabs &middot; ${domainCount} domains</span>
+        </span>
+        <div class="window-divider-line"></div>
+      </div>`;
+
+    return `
+      ${wgIndex > 0 ? dividerHtml : ''}
+      ${domainsHtml}
+    `;
+  }).join('');
 }function renderHistory(groups) {
   const container = document.getElementById('historyList');
   const empty = document.getElementById('historyEmpty');

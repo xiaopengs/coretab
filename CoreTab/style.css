@@ -700,6 +700,56 @@ header .date {
 }
 
 /* ============================================================
+   WINDOW DIVIDER (Open Tabs grouping — full-width tag separator)
+   ============================================================ */
+.window-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 28px 0 20px;
+  column-span: all;
+  break-inside: avoid;
+}
+
+.window-divider-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  background: var(--clay-black);
+  color: var(--pure-white);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.window-divider-tag svg {
+  width: 13px;
+  height: 13px;
+  opacity: 0.8;
+}
+
+.window-divider-tag .window-tab-count {
+  background: rgba(255, 255, 255, 0.18);
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.window-divider-line {
+  flex: 1;
+  height: 1.5px;
+  background: var(--oat-border);
+  min-width: 40px;
+}
+
+/* ============================================================
    MISSION CARDS (Open Tabs - Legacy)
    ============================================================ */
 
