@@ -247,17 +247,30 @@ function hideConfirmDialog() {
   const overlay = document.getElementById('confirmDialogOverlay');
   if (overlay) {
     overlay.classList.remove('visible');
-    setTimeout(() => overlay.style.display = 'none', 250);
+    setTimeout(() => {
+      overlay.style.display = 'none';
+      // 确保任何可能残留的样式都被清理
+      overlay.style.pointerEvents = 'auto';
+    }, 250);
+    // 立即恢复指针事件，防止页面卡住
+    overlay.style.pointerEvents = 'auto';
   }
   pendingConfirmCallback = null;
 }
 
-function performConfirmedAction() {
+async function performConfirmedAction() {
   if (pendingConfirmCallback) {
-    pendingConfirmCallback();
+    const callback = pendingConfirmCallback;
     pendingConfirmCallback = null;
+    try {
+      hideConfirmDialog();
+      await callback();
+    } catch (err) {
+      console.error('[coretab] Confirm action failed:', err);
+    }
+  } else {
+    hideConfirmDialog();
   }
-  hideConfirmDialog();
 }
 
 async function closeDomainTabs(domain, windowId) {
@@ -1036,33 +1049,74 @@ function initSearch() {
   });
 }
 
+function getAllClosedTabs() {
+  const closedTabsData = getClosedTabs();
+  const allClosedTabs = [];
+  
+  for (const dateKey in closedTabsData) {
+    for (const hostname in closedTabsData[dateKey]) {
+      closedTabsData[dateKey][hostname].forEach(entry => {
+        allClosedTabs.push({
+          ...entry,
+          closed: true,
+          hostname: hostname,
+          closedAt: entry.closedAt
+        });
+      });
+    }
+  }
+  
+  // 按关闭时间降序排列
+  return allClosedTabs.sort((a, b) => b.closedAt - a.closedAt);
+}
+
 async function performSearch(query) {
   const searchResults = document.getElementById('searchResults');
   if (!searchResults) return;
 
   try {
-    const allTabs = await chrome.tabs.query({});
-    const realTabs = allTabs.filter(t => t.url && !isSystemUrl(t.url));
+    // 获取打开的标签页
+    const allOpenTabs = await chrome.tabs.query({});
+    const realOpenTabs = allOpenTabs.filter(t => t.url && !isSystemUrl(t.url)).map(tab => ({
+      ...tab,
+      closed: false
+    }));
+    
+    // 获取关闭的标签页
+    const allClosedTabs = getAllClosedTabs();
 
-    const matches = realTabs.filter(tab => {
+    // 搜索打开的标签页
+    const openMatches = realOpenTabs.filter(tab => {
       const title = (tab.title || '').toLowerCase();
       const url = (tab.url || '').toLowerCase();
-      return title.includes(query) || url.includes(query);
+      const hostname = (tab.hostname || '').toLowerCase();
+      return title.includes(query) || url.includes(query) || hostname.includes(query);
+    }).slice(0, 10);
+    
+    // 搜索关闭的标签页
+    const closedMatches = allClosedTabs.filter(tab => {
+      const title = (tab.title || '').toLowerCase();
+      const url = (tab.url || '').toLowerCase();
+      const hostname = (tab.hostname || '').toLowerCase();
+      return title.includes(query) || url.includes(query) || hostname.includes(query);
     }).slice(0, 10);
 
-    if (matches.length === 0) {
+    // 合并搜索结果，打开的标签页在前
+    const allMatches = [...openMatches, ...closedMatches].slice(0, 15);
+
+    if (allMatches.length === 0) {
       searchResults.innerHTML = '<div class="search-no-results">No tabs found</div>';
     } else {
-      searchResults.innerHTML = matches.map(tab => {
-        const hostname = extractHostname(tab.url) || '';
+      searchResults.innerHTML = allMatches.map(tab => {
+        const hostname = tab.closed ? tab.hostname : extractHostname(tab.url) || '';
         return `
-          <div class="search-result-item" data-action="focus-tab" data-tab-url="${escapeHtml(tab.url)}">
+          <div class="search-result-item${tab.closed ? ' closed' : ''}" data-action="${tab.closed ? 'reopen-tab' : 'focus-tab'}" data-tab-url="${escapeHtml(tab.url)}">
             <img src="https://www.google.com/s2/favicons?domain=${escapeHtml(hostname)}&sz=32" alt="" onerror="this.style.display='none'">
             <div class="search-result-info">
               <div class="search-result-title">${escapeHtml(tab.title || tab.url)}</div>
-              <div class="search-result-url">${escapeHtml(tab.hostname || '')}</div>
+              <div class="search-result-url">${escapeHtml(tab.closed ? hostname : tab.hostname || '')}</div>
             </div>
-            <span class="search-result-badge">${escapeHtml(hostname)}</span>
+            <span class="search-result-badge">${tab.closed ? 'Closed' : escapeHtml(hostname)}</span>
           </div>
         `;
       }).join('');
