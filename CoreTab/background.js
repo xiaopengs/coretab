@@ -118,15 +118,22 @@ function addRecentTab(url, title, visitedAt) {
 }
 
 // History backfill: import existing browser history for tracked domains
-const RECENT_BACKFILL_KEY = 'coretab_recent_backfill_v2';
+// Tracks per-domain completion to avoid re-running for already-backfilled domains
+const RECENT_BACKFILL_STATE_KEY = 'coretab_recent_backfill_state';
 
 async function backfillRecentTabs() {
-  if (localStorage.getItem(RECENT_BACKFILL_KEY)) return;
+  let backfilled = [];
+  try {
+    backfilled = JSON.parse(localStorage.getItem(RECENT_BACKFILL_STATE_KEY) || '[]');
+  } catch { backfilled = []; }
+
+  const newDomains = RECENT_TRACKED_DOMAINS.filter(d => !backfilled.includes(d));
+  if (newDomains.length === 0) return;
 
   const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
   let total = 0;
 
-  for (const domain of RECENT_TRACKED_DOMAINS) {
+  for (const domain of newDomains) {
     try {
       const results = await chrome.history.search({
         text: domain,
@@ -145,12 +152,13 @@ async function backfillRecentTabs() {
         addRecentTab(item.url, item.title, item.lastVisitTime);
         total++;
       }
+      backfilled.push(domain);
     } catch (err) {
       console.error(`[coretab] backfill failed for ${domain}:`, err);
     }
   }
 
-  localStorage.setItem(RECENT_BACKFILL_KEY, '1');
+  localStorage.setItem(RECENT_BACKFILL_STATE_KEY, JSON.stringify(backfilled));
   console.log(`[coretab] Backfilled ${total} history entries into Recent Tabs`);
 }
 
