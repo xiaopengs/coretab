@@ -1098,18 +1098,20 @@ function saveRecentTabs(tabs) {
 }
 
 // Add or update a tab visit
-function addRecentTab(url, title) {
+function addRecentTab(url, title, visitedAt) {
   if (!shouldTrackUrl(url)) return;
 
   const hostname = extractHostname(url);
-  const now = Date.now();
+  const now = visitedAt || Date.now();
   let tabs = getRecentTabs();
 
   // Check if tab already exists
   const existingIndex = tabs.findIndex(t => t.url === url);
   if (existingIndex !== -1) {
-    // Update existing tab
-    tabs[existingIndex].visitedAt = now;
+    // Only update visitedAt if newer (for backfill merging)
+    if (now > tabs[existingIndex].visitedAt) {
+      tabs[existingIndex].visitedAt = now;
+    }
     tabs[existingIndex].visitCount = (tabs[existingIndex].visitCount || 1) + 1;
     tabs[existingIndex].title = title || tabs[existingIndex].title;
   } else {

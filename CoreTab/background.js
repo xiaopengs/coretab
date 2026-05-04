@@ -86,16 +86,19 @@ function saveRecentTabs(tabs) {
   } catch {}
 }
 
-function addRecentTab(url, title) {
+function addRecentTab(url, title, visitedAt) {
   if (!shouldTrackUrl(url)) return;
 
   const hostname = extractHostname(url);
-  const now = Date.now();
+  const now = visitedAt || Date.now();
   let tabs = getRecentTabs();
 
   const existingIndex = tabs.findIndex(t => t.url === url);
   if (existingIndex !== -1) {
-    tabs[existingIndex].visitedAt = now;
+    // Only update visitedAt if newer (for backfill merging)
+    if (now > tabs[existingIndex].visitedAt) {
+      tabs[existingIndex].visitedAt = now;
+    }
     tabs[existingIndex].visitCount = (tabs[existingIndex].visitCount || 1) + 1;
     tabs[existingIndex].title = title || tabs[existingIndex].title;
   } else {
@@ -112,6 +115,43 @@ function addRecentTab(url, title) {
   tabs = tabs.slice(0, RECENT_MAX_TOTAL);
 
   saveRecentTabs(tabs);
+}
+
+// History backfill: import existing browser history for tracked domains
+const RECENT_BACKFILL_KEY = 'coretab_recent_backfill_v2';
+
+async function backfillRecentTabs() {
+  if (localStorage.getItem(RECENT_BACKFILL_KEY)) return;
+
+  const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  let total = 0;
+
+  for (const domain of RECENT_TRACKED_DOMAINS) {
+    try {
+      const results = await chrome.history.search({
+        text: domain,
+        maxResults: 100,
+        startTime: sevenDaysAgo
+      });
+
+      const filtered = results.filter(item => {
+        try {
+          const u = new URL(item.url);
+          return u.hostname === domain || u.hostname.endsWith('.' + domain);
+        } catch { return false; }
+      });
+
+      for (const item of filtered) {
+        addRecentTab(item.url, item.title, item.lastVisitTime);
+        total++;
+      }
+    } catch (err) {
+      console.error(`[coretab] backfill failed for ${domain}:`, err);
+    }
+  }
+
+  localStorage.setItem(RECENT_BACKFILL_KEY, '1');
+  console.log(`[coretab] Backfilled ${total} history entries into Recent Tabs`);
 }
 
 const BADGE_COLORS = {
@@ -163,10 +203,12 @@ async function updateBadge() {
 
 chrome.runtime.onInstalled.addListener(() => {
   updateBadge();
+  backfillRecentTabs();
 });
 
 chrome.runtime.onStartup.addListener(() => {
   updateBadge();
+  backfillRecentTabs();
 });
 
 chrome.tabs.onCreated.addListener(() => {
