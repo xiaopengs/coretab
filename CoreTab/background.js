@@ -14,7 +14,8 @@ const RECENT_TRACKED_DOMAINS = [
   'docs.google.com',
   'drive.google.com',
   'slides.google.com',
-  'sheets.google.com'
+  'sheets.google.com',
+  'elink.e.hihonor.com'
 ];
 const RECENT_MAX_PER_DOMAIN = 10;
 const RECENT_MAX_TOTAL = 50;

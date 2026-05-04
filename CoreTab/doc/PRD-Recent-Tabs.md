@@ -126,6 +126,7 @@ const DEFAULT_CONFIG: RecentTabsConfig = {
     'larksuite.com',
     'notion.so',
     'docs.google.com',
+    'elink.e.hihonor.com',
     'confluence.*' // 支持通配符
   ],
   maxPerDomain: 10,
