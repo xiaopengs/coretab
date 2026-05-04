@@ -1080,30 +1080,30 @@ function shouldTrackUrl(url) {
   }
 }
 
-// Get recent tabs from storage
-function getRecentTabs() {
+// Get recent tabs from storage (chrome.storage.local for cross-context access)
+async function getRecentTabs() {
   try {
-    const raw = localStorage.getItem(RECENT_TABS_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const result = await chrome.storage.local.get(RECENT_TABS_KEY);
+    return result[RECENT_TABS_KEY] || [];
   } catch {
     return [];
   }
 }
 
 // Save recent tabs to storage
-function saveRecentTabs(tabs) {
+async function saveRecentTabs(tabs) {
   try {
-    localStorage.setItem(RECENT_TABS_KEY, JSON.stringify(tabs));
+    await chrome.storage.local.set({ [RECENT_TABS_KEY]: tabs });
   } catch {}
 }
 
 // Add or update a tab visit
-function addRecentTab(url, title, visitedAt) {
+async function addRecentTab(url, title, visitedAt) {
   if (!shouldTrackUrl(url)) return;
 
   const hostname = extractHostname(url);
   const now = visitedAt || Date.now();
-  let tabs = getRecentTabs();
+  let tabs = await getRecentTabs();
 
   // Check if tab already exists
   const existingIndex = tabs.findIndex(t => t.url === url);
@@ -1131,12 +1131,12 @@ function addRecentTab(url, title, visitedAt) {
   // Limit total tabs
   tabs = tabs.slice(0, RECENT_MAX_TOTAL);
 
-  saveRecentTabs(tabs);
+  await saveRecentTabs(tabs);
 }
 
 // Group recent tabs by domain
-function getRecentTabsGrouped() {
-  const tabs = getRecentTabs();
+async function getRecentTabsGrouped() {
+  const tabs = await getRecentTabs();
 
   // Group by hostname
   const groups = {};
@@ -1163,7 +1163,7 @@ function getRecentTabsGrouped() {
 // Load and render recent tabs
 async function loadRecentTabs() {
   try {
-    const groups = getRecentTabsGrouped();
+    const groups = await getRecentTabsGrouped();
     renderRecentTabs(groups);
   } catch (err) {
     console.error('[coretab] Failed to load recent tabs:', err);

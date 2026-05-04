@@ -39,7 +39,6 @@ function isSystemUrl(url) {
 // Recent Tabs helper functions
 function extractHostname(url) {
   if (!url) return null;
-  // 处理允许的chrome页面
   if (url === 'chrome://newtab/' || url === 'chrome://newtab') {
     return 'new-tab';
   }
@@ -71,27 +70,28 @@ function shouldTrackUrl(url) {
   }
 }
 
-function getRecentTabs() {
+// Use chrome.storage.local instead of localStorage (SV in MV3 has no localStorage)
+async function getRecentTabs() {
   try {
-    const raw = localStorage.getItem(RECENT_TABS_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const result = await chrome.storage.local.get(RECENT_TABS_KEY);
+    return result[RECENT_TABS_KEY] || [];
   } catch {
     return [];
   }
 }
 
-function saveRecentTabs(tabs) {
+async function saveRecentTabs(tabs) {
   try {
-    localStorage.setItem(RECENT_TABS_KEY, JSON.stringify(tabs));
+    await chrome.storage.local.set({ [RECENT_TABS_KEY]: tabs });
   } catch {}
 }
 
-function addRecentTab(url, title, visitedAt) {
+async function addRecentTab(url, title, visitedAt) {
   if (!shouldTrackUrl(url)) return;
 
   const hostname = extractHostname(url);
   const now = visitedAt || Date.now();
-  let tabs = getRecentTabs();
+  let tabs = await getRecentTabs();
 
   const existingIndex = tabs.findIndex(t => t.url === url);
   if (existingIndex !== -1) {
@@ -114,7 +114,7 @@ function addRecentTab(url, title, visitedAt) {
   tabs.sort((a, b) => b.visitedAt - a.visitedAt);
   tabs = tabs.slice(0, RECENT_MAX_TOTAL);
 
-  saveRecentTabs(tabs);
+  await saveRecentTabs(tabs);
 }
 
 // History backfill: import existing browser history for tracked domains
@@ -124,7 +124,8 @@ const RECENT_BACKFILL_STATE_KEY = 'coretab_recent_backfill_state';
 async function backfillRecentTabs() {
   let backfilled = [];
   try {
-    backfilled = JSON.parse(localStorage.getItem(RECENT_BACKFILL_STATE_KEY) || '[]');
+    const result = await chrome.storage.local.get(RECENT_BACKFILL_STATE_KEY);
+    backfilled = result[RECENT_BACKFILL_STATE_KEY] || [];
   } catch { backfilled = []; }
 
   const newDomains = RECENT_TRACKED_DOMAINS.filter(d => !backfilled.includes(d));
@@ -149,7 +150,7 @@ async function backfillRecentTabs() {
       });
 
       for (const item of filtered) {
-        addRecentTab(item.url, item.title, item.lastVisitTime);
+        await addRecentTab(item.url, item.title, item.lastVisitTime);
         total++;
       }
       backfilled.push(domain);
@@ -158,7 +159,7 @@ async function backfillRecentTabs() {
     }
   }
 
-  localStorage.setItem(RECENT_BACKFILL_STATE_KEY, JSON.stringify(backfilled));
+  await chrome.storage.local.set({ [RECENT_BACKFILL_STATE_KEY]: backfilled });
   console.log(`[coretab] Backfilled ${total} history entries into Recent Tabs`);
 }
 
