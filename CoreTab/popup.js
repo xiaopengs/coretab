@@ -1,5 +1,18 @@
 // CoreTab - 弹窗逻辑
 
+// ── Favicon Fallback ───────────────────────────────────
+const DEFAULT_FAVICON = 'data:image/svg+xml,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="1.5">' +
+  '<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>'
+);
+
+document.addEventListener('error', (e) => {
+  const img = e.target;
+  if (img && img.matches && img.matches('[data-fallback]')) {
+    img.src = DEFAULT_FAVICON;
+  }
+}, true);
+
 // DOM 元素
 const elements = {
   saveAllTabs: document.getElementById('saveAllTabs'),
@@ -158,8 +171,8 @@ function createTabElement(tab) {
   div.innerHTML = `
     <input type="checkbox" class="tab-checkbox" data-id="${tab.id}">
     <div class="tab-icon">
-      <img src="${tab.favIconUrl || 'icons/icon16.png'}" 
-           onerror="this.src='icons/icon16.png'" 
+      <img src="${tab.favIconUrl || 'icons/icon16.png'}"
+           data-fallback loading="lazy" decoding="async"
            alt="">
     </div>
     <div class="tab-info">

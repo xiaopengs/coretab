@@ -18,6 +18,22 @@ const LANDING_PAGE_PATTERNS = [
 ];
 
 const GITHUB_API_URL = 'https://api.github.com/search/repositories?q=stars:>1000&sort=stars&order=desc&per_page=6';
+
+// ── Favicon Fallback ───────────────────────────────────
+// Default SVG globe icon shown when favicon fails to load
+const DEFAULT_FAVICON = 'data:image/svg+xml,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="1.5">' +
+  '<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>'
+);
+
+// Capture-phase error handler — catches all [data-fallback] img errors,
+// including dynamically-added images (error event doesn't bubble on <img>)
+document.addEventListener('error', (e) => {
+  const img = e.target;
+  if (img && img.matches && img.matches('[data-fallback]')) {
+    img.src = DEFAULT_FAVICON;
+  }
+}, true);
 const GITHUB_CACHE_KEY = 'coretab_github_trending';
 const GITHUB_CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -903,7 +919,7 @@ function renderOpenTabs(windowGroups) {
         <div class="mission-pages">
           ${g.tabs.map(t => `
             <div class="page-chip" data-action="focus-tab" data-tab-url="${escapeHtml(t.url)}" title="${escapeHtml(smartTitle(t.title, t.url))}">
-              <img class="chip-favicon" src="https://www.google.com/s2/favicons?domain=${escapeHtml(t.hostname)}&sz=16" alt="" onerror="this.style.display='none'">
+              <img class="chip-favicon" src="https://www.google.com/s2/favicons?domain=${escapeHtml(t.hostname)}&sz=16" alt="" data-fallback loading="lazy" decoding="async">
               <span class="chip-text">${escapeHtml(smartTitle(t.title, t.url))}</span>
               <div class="chip-actions">
                 <button class="chip-action chip-close" data-action="close-tab" data-tab-url="${escapeHtml(t.url)}" aria-label="Close tab">
@@ -955,7 +971,7 @@ function renderOpenTabs(windowGroups) {
   container.innerHTML = groups.slice(0, 10).map(g => `
     <div class="history-card">
       <div class="history-top">
-        <img class="history-favicon" src="https://www.google.com/s2/favicons?domain=${escapeHtml(g.domain)}&sz=32" alt="" onerror="this.style.display='none'">
+        <img class="history-favicon" src="https://www.google.com/s2/favicons?domain=${escapeHtml(g.domain)}&sz=32" alt="" data-fallback loading="lazy" decoding="async">
         <span class="history-name">${g.label}</span>
         <span class="history-badge">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -1026,7 +1042,7 @@ function renderClosedTabs(groups) {
           <div class="closed-card">
             <div class="closed-card-header">
               <div class="closed-card-info">
-                <img class="closed-card-favicon" src="https://www.google.com/s2/favicons?domain=${escapeHtml(site.domain)}&sz=32" alt="" onerror="this.style.display='none'">
+                <img class="closed-card-favicon" src="https://www.google.com/s2/favicons?domain=${escapeHtml(site.domain)}&sz=32" alt="" data-fallback loading="lazy" decoding="async">
                 <span class="closed-card-name">${escapeHtml(site.label)}</span>
                 <span class="closed-card-badge">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -1200,7 +1216,7 @@ function renderRecentTabs(groups) {
         <div class="recent-card">
           <div class="recent-card-header">
             <div class="recent-card-info">
-              <img class="recent-card-favicon" src="https://www.google.com/s2/favicons?domain=${escapeHtml(site.domain)}&sz=32" alt="" onerror="this.style.display='none'">
+              <img class="recent-card-favicon" src="https://www.google.com/s2/favicons?domain=${escapeHtml(site.domain)}&sz=32" alt="" data-fallback loading="lazy" decoding="async">
               <span class="recent-card-name">${escapeHtml(site.label)}</span>
               <span class="recent-card-badge">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -1382,7 +1398,7 @@ async function performSearch(query) {
         const hostname = tab.closed ? tab.hostname : extractHostname(tab.url) || '';
         return `
           <div class="search-result-item${tab.closed ? ' closed' : ''}" data-action="${tab.closed ? 'reopen-tab' : 'focus-tab'}" data-tab-url="${escapeHtml(tab.url)}">
-            <img src="https://www.google.com/s2/favicons?domain=${escapeHtml(hostname)}&sz=32" alt="" onerror="this.style.display='none'">
+            <img src="https://www.google.com/s2/favicons?domain=${escapeHtml(hostname)}&sz=32" alt="" data-fallback loading="lazy" decoding="async">
             <div class="search-result-info">
               <div class="search-result-title">${escapeHtml(tab.title || tab.url)}</div>
               <div class="search-result-url">${escapeHtml(tab.closed ? hostname : tab.hostname || '')}</div>

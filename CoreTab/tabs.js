@@ -1,5 +1,18 @@
 // CoreTab - 主页面逻辑
 
+// ── Favicon Fallback ───────────────────────────────────
+const DEFAULT_FAVICON = 'data:image/svg+xml,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="1.5">' +
+  '<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>'
+);
+
+document.addEventListener('error', (e) => {
+  const img = e.target;
+  if (img && img.matches && img.matches('[data-fallback]')) {
+    img.src = DEFAULT_FAVICON;
+  }
+}, true);
+
 // 存储键名
 const STORAGE_KEY = 'coretab_groups';
 
@@ -163,7 +176,7 @@ function createGroupHTML(group) {
   const tabsList = group.tabs ? group.tabs.map(tab => `
     <div class="tab-item" data-tab-id="${group.id}" data-tab-url="${escapeHtml(tab.url)}">
       <div class="tab-favicon">
-        <img src="${tab.favIconUrl || 'icons/icon16.png'}" onerror="this.src='icons/icon16.png'" alt="">
+        <img src="${tab.favIconUrl || 'icons/icon16.png'}" data-fallback loading="lazy" decoding="async" alt="">
       </div>
       <span class="tab-title">${escapeHtml(tab.title || tab.url)}</span>
       <button class="tab-delete" data-delete-id="${group.id}" data-delete-tab="${tab.id}" title="删除">
@@ -423,7 +436,7 @@ async function shareGroup(groupId) {
     ${group.tabs.map(tab => `
       <li class="tab-item">
         <a href="${escapeHtml(tab.url)}" target="_blank">
-          ${tab.favIconUrl ? `<img src="${tab.favIconUrl}" class="favicon" onerror="this.style.display='none'">` : ''}
+          ${tab.favIconUrl ? `<img src="${tab.favIconUrl}" class="favicon" data-fallback loading="lazy" decoding="async">` : ''}
           ${escapeHtml(tab.title)}
         </a>
       </li>

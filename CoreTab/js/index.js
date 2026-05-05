@@ -5,6 +5,21 @@
 
 'use strict';
 
+// ── Favicon Fallback ───────────────────────────────────
+// Default SVG globe icon shown when favicon fails to load
+const DEFAULT_FAVICON = 'data:image/svg+xml,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="1.5">' +
+  '<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>'
+);
+
+// Capture-phase error handler — catches all [data-fallback] img errors
+document.addEventListener('error', (e) => {
+  const img = e.target;
+  if (img && img.matches && img.matches('[data-fallback]')) {
+    img.src = DEFAULT_FAVICON;
+  }
+}, true);
+
 /* ----------------------------------------------------------------
    1. TAB MANAGEMENT - 标签页管理
    ---------------------------------------------------------------- */
@@ -325,7 +340,7 @@ function renderGitHubCards(projects) {
     return `
       <div class="github-card">
         <div class="github-card-header">
-          <img class="github-avatar" src="${project.avatarUrl}" alt="${escapeHtml(project.owner)}" onerror="this.style.display='none'">
+          <img class="github-avatar" src="${project.avatarUrl}" alt="${escapeHtml(project.owner)}" data-fallback loading="lazy" decoding="async">
           <div class="github-owner">${escapeHtml(project.owner)}</div>
         </div>
         <a class="github-card-title" href="${project.url}" target="_blank" rel="noopener" title="${safeTitle}">
@@ -474,7 +489,7 @@ function renderDomainCard(group) {
 
     return `
       <div class="page-chip" data-action="focus-tab" data-tab-url="${encodeURIComponent(tab.url)}" title="${safeTitle}">
-        <img class="chip-favicon" src="${faviconUrl}" alt="" onerror="this.style.display='none'">
+        <img class="chip-favicon" src="${faviconUrl}" alt="" data-fallback loading="lazy" decoding="async">
         <span class="chip-text">${escapeHtml(label)}</span>${dupeTag}
         <div class="chip-actions">
           <button class="chip-action" data-action="close-single-tab" data-tab-url="${safeUrl}" title="关闭">
@@ -545,7 +560,7 @@ function renderHistorySection(historyGroups) {
 
       return `
         <div class="history-item" data-action="focus-tab" data-tab-url="${safeUrl}">
-          <img class="history-favicon" src="${faviconUrl}" alt="" onerror="this.style.display='none'">
+          <img class="history-favicon" src="${faviconUrl}" alt="" data-fallback loading="lazy" decoding="async">
           <div class="history-info">
             <span class="history-title">${escapeHtml(title)}</span>
             <span class="history-time">${timeAgoStr}</span>
