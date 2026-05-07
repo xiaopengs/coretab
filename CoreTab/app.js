@@ -66,8 +66,8 @@ const RECENT_TRACKED_DOMAINS = [
   'sheets.google.com',
   'elink.e.hihonor.com'
 ];
-const RECENT_MAX_PER_DOMAIN = 10;
-const RECENT_MAX_TOTAL = 50;
+const RECENT_MAX_PER_DOMAIN = 50;
+const RECENT_MAX_TOTAL = 200;
 
 // Initialization
 async function init() {
@@ -95,9 +95,28 @@ if (document.readyState === 'loading') {
   init();
 }
 
-// Keyboard handler for dialog
+// Keyboard handler for dialogs
+// Press Esc to close current open dialog
+function getActiveDialog() {
+  const moreOverlay = document.getElementById('moreModalOverlay');
+  if (moreOverlay && moreOverlay.style.display !== 'none') return 'more';
+  return 'confirm';
+}
+
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') hideConfirmDialog();
+  if (e.key === 'Escape') {
+    const active = getActiveDialog();
+    if (active === 'more') { closeMoreModal(); return; }
+    hideConfirmDialog();
+  }
+});
+
+// Click on more-modal overlay (outside content) to close
+document.addEventListener('click', (e) => {
+  const overlay = document.getElementById('moreModalOverlay');
+  if (overlay && e.target === overlay) {
+    closeMoreModal();
+  }
 });
 
 // Single event listener on document - matches tab-out pattern
@@ -178,6 +197,81 @@ document.addEventListener('click', async (e) => {
   // ---- Toggle history expand ----
   if (action === 'toggle-history') {
     toggleHistoryCard(actionEl);
+    return;
+  }
+
+  // ---- More modal actions ----
+  if (action === 'close-more-modal') {
+    closeMoreModal();
+    return;
+  }
+
+  if (action === 'more-recent') {
+    const domain = actionEl.dataset.domain;
+    const label = actionEl.dataset.label;
+    const recentTabs = await getRecentTabs();
+    const entries = recentTabs.filter(t => {
+      try { return new URL(t.url).hostname === domain; } catch { return false; }
+    });
+    openMoreModal(
+      `${label} — ${entries.length} pages`,
+      entries,
+      entry => `
+        <div class="more-modal-item" data-action="open-more-item" data-url="${escapeHtml(entry.url)}">
+          <img src="https://www.google.com/s2/favicons?domain=${domain}&sz=32" alt="" loading="lazy" decoding="async">
+          <span class="more-modal-item-title">${escapeHtml(smartTitle(entry.title, entry.url))}</span>
+          <span class="more-modal-item-time">${timeAgo(entry.visitedAt)}</span>
+        </div>
+      `
+    );
+    return;
+  }
+
+  if (action === 'more-closed') {
+    const domain = actionEl.dataset.domain;
+    const label = actionEl.dataset.label;
+    const closedTabs = getClosedTabs();
+    const entries = [];
+    for (const dateKey in closedTabs) {
+      if (closedTabs[dateKey][domain]) {
+        entries.push(...closedTabs[dateKey][domain]);
+      }
+    }
+    openMoreModal(
+      `${label} — ${entries.length} closed`,
+      entries,
+      entry => `
+        <div class="more-modal-item" data-action="open-more-item" data-url="${escapeHtml(entry.url)}">
+          <img src="https://www.google.com/s2/favicons?domain=${domain}&sz=32" alt="" loading="lazy" decoding="async">
+          <span class="more-modal-item-title">${escapeHtml(entry.title || entry.url)}</span>
+          <span class="more-modal-item-time">${timeAgo(entry.closedAt)}</span>
+        </div>
+      `
+    );
+    return;
+  }
+
+  if (action === 'more-history') {
+    openMoreModal(
+      `All Sites — ${historyGroups.length} sites`,
+      historyGroups,
+      g => `
+        <div class="more-modal-item" data-action="open-more-item" data-url="https://${escapeHtml(g.domain)}">
+          <img src="https://www.google.com/s2/favicons?domain=${escapeHtml(g.domain)}&sz=32" alt="" loading="lazy" decoding="async">
+          <span class="more-modal-item-title">${escapeHtml(g.label)} (${g.visitCount} visits)</span>
+          <span class="more-modal-item-time">${g.entries.length} pages</span>
+        </div>
+      `
+    );
+    return;
+  }
+
+  if (action === 'open-more-item') {
+    const url = actionEl.dataset.url;
+    if (url) {
+      chrome.tabs.create({ url, active: true });
+      closeMoreModal();
+    }
     return;
   }
 
@@ -302,13 +396,42 @@ function hideConfirmDialog() {
     overlay.classList.remove('visible');
     setTimeout(() => {
       overlay.style.display = 'none';
-      // 确保任何可能残留的样式都被清理
       overlay.style.pointerEvents = 'auto';
     }, 250);
-    // 立即恢复指针事件，防止页面卡住
     overlay.style.pointerEvents = 'auto';
   }
   pendingConfirmCallback = null;
+}
+
+// ============================================================
+// MORE MODAL — 全量列表弹窗
+// ============================================================
+
+/**
+ * openMoreModal(title, items, itemRenderer)
+ * 打开全量列表弹窗
+ * @param {string} title - 弹窗标题
+ * @param {Array} items - 多条目的原始数据
+ * @param {Function} itemRenderer - 条目渲染函数 (item) => htmlString
+ */
+function openMoreModal(title, items, itemRenderer) {
+  const overlay = document.getElementById('moreModalOverlay');
+  const titleEl = document.getElementById('moreModalTitle');
+  const bodyEl = document.getElementById('moreModalBody');
+
+  if (!overlay || !titleEl || !bodyEl) return;
+
+  titleEl.textContent = title;
+  bodyEl.innerHTML = items.map(itemRenderer).join('');
+  overlay.style.display = 'flex';
+  requestAnimationFrame(() => overlay.classList.add('visible'));
+}
+
+function closeMoreModal() {
+  const overlay = document.getElementById('moreModalOverlay');
+  if (!overlay) return;
+  overlay.classList.remove('visible');
+  setTimeout(() => { overlay.style.display = 'none'; }, 300);
 }
 
 async function performConfirmedAction() {
@@ -968,7 +1091,10 @@ function renderOpenTabs(windowGroups) {
   empty.style.display = 'none';
   if (countEl) countEl.textContent = `${groups.length} sites`;
 
-  container.innerHTML = groups.slice(0, 10).map(g => `
+  const visibleGroups = groups.slice(0, 10);
+  const hiddenGroupCount = groups.length - 10;
+
+  container.innerHTML = visibleGroups.map(g => `
     <div class="history-card">
       <div class="history-top">
         <img class="history-favicon" src="https://www.google.com/s2/favicons?domain=${escapeHtml(g.domain)}&sz=32" alt="" data-fallback loading="lazy" decoding="async">
@@ -997,7 +1123,15 @@ function renderOpenTabs(windowGroups) {
         </div>
       ` : ''}
     </div>
-  `).join('');
+  `).join('') +
+    (hiddenGroupCount > 0 ? `
+    <button class="page-more-btn" data-action="more-history" style="width:100%;margin-top:8px;">
+      +${hiddenGroupCount} more sites
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m19 9-7 7-7-7"/>
+      </svg>
+    </button>
+  ` : '');
 }
 
 async function loadClosedTabs() {
@@ -1064,6 +1198,14 @@ function renderClosedTabs(groups) {
                   <span class="closed-page-time">${timeAgo(entry.closedAt)}</span>
                 </div>
               `).join('')}
+              ${site.entries.length > 5 ? `
+                <button class="page-more-btn" data-action="more-closed" data-domain="${escapeHtml(site.domain)}" data-label="${escapeHtml(site.label)}">
+                  +${site.entries.length - 5} more
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m19 9-7 7-7-7"/>
+                  </svg>
+                </button>
+              ` : ''}
             </div>
           </div>
         `).join('')}
@@ -1234,6 +1376,14 @@ function renderRecentTabs(groups) {
                 <span class="recent-page-time">${timeAgo(entry.visitedAt)}</span>
               </div>
             `).join('')}
+            ${site.entries.length > 5 ? `
+              <button class="page-more-btn" data-action="more-recent" data-domain="${escapeHtml(site.domain)}" data-label="${escapeHtml(site.label)}">
+                +${site.entries.length - 5} more
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m19 9-7 7-7-7"/>
+                </svg>
+              </button>
+            ` : ''}
           </div>
         </div>
       `).join('')}

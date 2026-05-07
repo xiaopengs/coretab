@@ -17,8 +17,8 @@ const RECENT_TRACKED_DOMAINS = [
   'sheets.google.com',
   'elink.e.hihonor.com'
 ];
-const RECENT_MAX_PER_DOMAIN = 10;
-const RECENT_MAX_TOTAL = 50;
+const RECENT_MAX_PER_DOMAIN = 50;
+const RECENT_MAX_TOTAL = 200;
 
 // 例外：这些chrome://页面应该显示在opentabs下面
 const ALLOWED_CHROME_PAGES = [

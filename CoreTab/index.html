@@ -277,6 +277,7 @@
 <!-- ================================================================
      CONFIRM DIALOG — Modal for destructive actions
      ================================================================ -->
+<!-- 确认对话框 -->
 <div class="confirm-dialog-overlay" id="confirmDialogOverlay" style="display:none">
   <div class="confirm-dialog" id="confirmDialog">
     <div class="confirm-icon">
@@ -290,6 +291,22 @@
       <button class="pill-btn secondary" data-action="close-dialog">Cancel</button>
       <button class="pill-btn danger" data-action="close-confirm">Confirm</button>
     </div>
+  </div>
+</div>
+
+<!-- 更多列表弹窗 -->
+<div class="more-modal-overlay" id="moreModalOverlay" style="display:none">
+  <div class="more-modal">
+    <div class="more-modal-header">
+      <h3 class="more-modal-title" id="moreModalTitle">All Items</h3>
+      <button class="more-modal-close" data-action="close-more-modal">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="more-modal-body" id="moreModalBody"></div>
   </div>
 </div>
 

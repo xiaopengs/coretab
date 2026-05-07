@@ -1931,3 +1931,155 @@ header { animation: fadeUp 0.5s ease both; }
     max-width: none;
   }
 }
+
+/* ============================================================
+   MORE MODAL — 全量列表弹窗
+   ============================================================ */
+.more-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(250, 249, 247, 0.85);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.more-modal-overlay.visible {
+  opacity: 1;
+}
+
+.more-modal {
+  background: var(--pure-white);
+  border-radius: var(--radius-feature);
+  max-width: 520px;
+  width: 90%;
+  max-height: 70vh;
+  border: 1.5px solid var(--oat-border);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15), var(--clay-shadow);
+  transform: scale(0.95);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.more-modal-overlay.visible .more-modal {
+  transform: scale(1);
+}
+
+.more-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 12px;
+  border-bottom: 1px solid var(--oat-light);
+  flex-shrink: 0;
+}
+
+.more-modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  color: var(--clay-black);
+}
+
+.more-modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--warm-silver);
+  padding: 6px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
+}
+
+.more-modal-close:hover {
+  color: var(--clay-black);
+  background: var(--oat-light);
+}
+
+.more-modal-body {
+  padding: 8px 24px 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.more-modal-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+  gap: 8px;
+}
+
+.more-modal-item:hover {
+  background: var(--oat-light);
+}
+
+.more-modal-item img {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  border-radius: 2px;
+}
+
+.more-modal-item-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--clay-black);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.more-modal-item-time {
+  font-size: 11px;
+  color: var(--warm-silver);
+  flex-shrink: 0;
+}
+
+/* "More" button inside cards */
+.page-more-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sharp);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--matcha-600);
+  background: none;
+  border: 1px dashed var(--oat-border);
+  transition: all 0.15s;
+  margin-top: 4px;
+}
+
+.page-more-btn:hover {
+  background: rgba(7, 138, 82, 0.06);
+  border-color: var(--matcha-300);
+  color: var(--matcha-800);
+}
+
+.page-more-btn svg {
+  width: 12px;
+  height: 12px;
+  transition: transform 0.2s;
+}
+
+.page-more-btn:hover svg {
+  transform: translateY(2px);
+}

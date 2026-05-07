@@ -479,7 +479,10 @@ function renderDomainCard(group) {
     }
   }
 
-  const pageChips = uniqueTabs.slice(0, 6).map(tab => {
+  const visibleChips = uniqueTabs.slice(0, 6);
+  const hiddenChips = uniqueTabs.slice(6);
+
+  const pageChips = visibleChips.map(tab => {
     const label = smartTitle(tab.title || '', tab.url);
     const count = urlCounts[tab.url];
     const dupeTag = count > 1 ? `<span class="chip-dupe">(${count}x)</span>` : '';
@@ -503,9 +506,11 @@ function renderDomainCard(group) {
     `;
   }).join('');
 
-  const extraCount = uniqueTabs.length - 6;
+  const extraCount = hiddenChips.length;
   const overflowHtml = extraCount > 0
-    ? `<div class="page-chip page-chip-overflow" data-action="expand-chips" data-domain-id="${stableId}">
+    ? `<div class="page-chip page-chip-overflow" data-action="expand-chips"
+          data-domain-id="${stableId}"
+          data-hidden-tabs="${encodeURIComponent(JSON.stringify(hiddenChips))}">
         +${extraCount} more
        </div>`
     : '';
@@ -551,8 +556,8 @@ function renderHistorySection(historyGroups) {
 
   section.style.display = 'block';
 
-  container.innerHTML = historyGroups.slice(0, 8).map(group => {
-    const items = group.items.slice(0, 5).map(item => {
+  container.innerHTML = historyGroups.map(group => {
+    const items = group.items.map(item => {
       const title = smartTitle(item.title || '', item.url);
       const safeUrl = encodeURIComponent(item.url);
       const timeAgoStr = timeAgo(item.lastVisitTime);
