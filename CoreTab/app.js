@@ -74,6 +74,7 @@ async function init() {
   initGreeting();
   initDateDisplay();
   initSearch();
+  await restoreClosedTabsFromStorage();
   await renderDashboard();
 }
 
@@ -231,12 +232,19 @@ document.addEventListener('click', async (e) => {
     const domain = actionEl.dataset.domain;
     const label = actionEl.dataset.label;
     const closedTabs = getClosedTabs();
+    const seenUrls = new Set();
     const entries = [];
     for (const dateKey in closedTabs) {
       if (closedTabs[dateKey][domain]) {
-        entries.push(...closedTabs[dateKey][domain]);
+        for (const entry of closedTabs[dateKey][domain]) {
+          if (!seenUrls.has(entry.url)) {
+            seenUrls.add(entry.url);
+            entries.push(entry);
+          }
+        }
       }
     }
+    entries.sort((a, b) => b.closedAt - a.closedAt);
     openMoreModal(
       `${label} — ${entries.length} closed`,
       entries,
@@ -728,9 +736,24 @@ function getClosedTabs() {
   }
 }
 
+// 启动时从 chrome.storage.local 恢复数据（防止 localStorage 被清理）
+async function restoreClosedTabsFromStorage() {
+  try {
+    const existing = getClosedTabs();
+    if (Object.keys(existing).length > 0) return; // 已有数据，不需要恢复
+    const result = await chrome.storage.local.get(CLOSED_TABS_KEY);
+    if (result[CLOSED_TABS_KEY] && Object.keys(result[CLOSED_TABS_KEY]).length > 0) {
+      localStorage.setItem(CLOSED_TABS_KEY, JSON.stringify(result[CLOSED_TABS_KEY]));
+      console.log('[coretab] Restored closed tabs from chrome.storage.local');
+    }
+  } catch (_) {}
+}
+
 function saveClosedTabs(data) {
   try {
     localStorage.setItem(CLOSED_TABS_KEY, JSON.stringify(data));
+    // 同时备份到 chrome.storage.local，防止清除浏览器数据时丢失
+    chrome.storage.local.set({ [CLOSED_TABS_KEY]: data }).catch(() => {});
   } catch (_) {}
 }
 
@@ -820,48 +843,53 @@ function removeClosedTabsForDomain(hostname) {
 
 function getClosedTabsGrouped() {
   const closedTabs = getClosedTabs();
-  const today = getDateKey(Date.now());
-  const yesterday = getDateKey(Date.now() - 86400000);
 
-  const groups = [];
+  // 按网站合并：同一域名跨所有日期合并
+  const domainMap = {};
 
-  for (const dateKey of Object.keys(closedTabs).sort().reverse()) {
-    let label = dateKey;
-    if (dateKey === today) label = 'Today';
-    else if (dateKey === yesterday) label = 'Yesterday';
-
-    const domains = [];
+  for (const dateKey of Object.keys(closedTabs)) {
     for (const hostname in closedTabs[dateKey]) {
-      if (closedTabs[dateKey][hostname].length > 0) {
-        // 对于new-tab这种特殊页面，做去重处理
-        let entries = closedTabs[dateKey][hostname];
-        if (hostname === 'new-tab' || hostname === 'extensions') {
-          // 先去重，保留每个URL的最新一条
-          const seenUrls = new Set();
-          const uniqueEntries = [];
-          for (const entry of entries) {
-            if (!seenUrls.has(entry.url)) {
-              seenUrls.add(entry.url);
-              uniqueEntries.push(entry);
-            }
-          }
-          // 再限制数量，最多保留1个（因为这类页面内容都一样）
-          entries = uniqueEntries.slice(0, 1);
-        }
-        domains.push({
-          domain: hostname,
-          label: friendlyDomain(hostname),
-          entries: entries
+      const entries = closedTabs[dateKey][hostname];
+      if (!entries || entries.length === 0) continue;
+
+      if (!domainMap[hostname]) {
+        domainMap[hostname] = [];
+      }
+
+      for (const entry of entries) {
+        domainMap[hostname].push({
+          ...entry,
+          closedAt: entry.closedAt
         });
       }
     }
-
-    if (domains.length > 0) {
-      groups.push({ date: dateKey, label, domains });
-    }
   }
 
-  return groups;
+  // 每个域名内部：去重 + 排序
+  const domains = Object.keys(domainMap).map(hostname => {
+    const seenUrls = new Set();
+    const unique = domainMap[hostname].filter(e => {
+      if (seenUrls.has(e.url)) return false;
+      seenUrls.add(e.url);
+      return true;
+    });
+    unique.sort((a, b) => b.closedAt - a.closedAt);
+    return {
+      domain: hostname,
+      label: friendlyDomain(hostname),
+      entries: unique
+    };
+  });
+
+  // 按最新关闭时间排序域名
+  domains.sort((a, b) => {
+    const aTime = a.entries[0]?.closedAt || 0;
+    const bTime = b.entries[0]?.closedAt || 0;
+    return bTime - aTime;
+  });
+
+  // 保持与旧接口兼容：返回数组，第一个元素包含所有域名
+  return [{ date: 'all', label: 'All Closed', domains }];
 }
 
 // URL Utilities
@@ -1150,12 +1178,11 @@ function renderClosedTabs(groups) {
 
   if (!container) return;
 
-  // Count total closed tabs
+  // 合并后 groups[0].domains 包含所有域名
+  const domains = groups[0]?.domains || [];
   let totalClosed = 0;
-  for (const dateGroup of groups) {
-    for (const site of dateGroup.domains) {
-      totalClosed += site.entries.length;
-    }
+  for (const site of domains) {
+    totalClosed += site.entries.length;
   }
 
   if (totalClosed === 0) {
@@ -1168,50 +1195,47 @@ function renderClosedTabs(groups) {
   empty.style.display = 'none';
   if (countEl) countEl.textContent = totalClosed + ' closed tabs';
 
-  container.innerHTML = groups.map(dateGroup => `
-    <div class="closed-date-group">
-      <div class="closed-date-label">${dateGroup.label}</div>
-      <div class="closed-sites">
-        ${dateGroup.domains.map(site => `
-          <div class="closed-card">
-            <div class="closed-card-header">
-              <div class="closed-card-info">
-                <img class="closed-card-favicon" src="https://www.google.com/s2/favicons?domain=${escapeHtml(site.domain)}&sz=32" alt="" data-fallback loading="lazy" decoding="async">
-                <span class="closed-card-name">${escapeHtml(site.label)}</span>
-                <span class="closed-card-badge">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
-                  </svg>
-                  ${site.entries.length} closed
-                </span>
-              </div>
-              <button class="closed-open-all" data-action="open-all-closed" data-domain="${escapeHtml(site.domain)}" title="Open all">
+  container.innerHTML = `
+    <div class="closed-sites">
+      ${domains.map(site => `
+        <div class="closed-card">
+          <div class="closed-card-header">
+            <div class="closed-card-info">
+              <img class="closed-card-favicon" src="https://www.google.com/s2/favicons?domain=${escapeHtml(site.domain)}&sz=32" alt="" data-fallback loading="lazy" decoding="async">
+              <span class="closed-card-name">${escapeHtml(site.label)}</span>
+              <span class="closed-card-badge">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
+                </svg>
+                ${site.entries.length} closed
+              </span>
+            </div>
+            <button class="closed-open-all" data-action="open-all-closed" data-domain="${escapeHtml(site.domain)}" title="Open all">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+              </svg>
+            </button>
+          </div>
+          <div class="closed-pages">
+            ${site.entries.slice(0, 5).map(entry => `
+              <div class="closed-page-item" data-action="reopen-tab" data-tab-url="${escapeHtml(entry.url)}">
+                <span class="closed-page-title">${escapeHtml(entry.title || entry.url)}</span>
+                <span class="closed-page-time">${timeAgo(entry.closedAt)}</span>
+              </div>
+            `).join('')}
+            ${site.entries.length > 5 ? `
+              <button class="page-more-btn" data-action="more-closed" data-domain="${escapeHtml(site.domain)}" data-label="${escapeHtml(site.label)}">
+                +${site.entries.length - 5} more
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m19 9-7 7-7-7"/>
                 </svg>
               </button>
-            </div>
-            <div class="closed-pages">
-              ${site.entries.slice(0, 5).map(entry => `
-                <div class="closed-page-item" data-action="reopen-tab" data-tab-url="${escapeHtml(entry.url)}">
-                  <span class="closed-page-title">${escapeHtml(entry.title || entry.url)}</span>
-                  <span class="closed-page-time">${timeAgo(entry.closedAt)}</span>
-                </div>
-              `).join('')}
-              ${site.entries.length > 5 ? `
-                <button class="page-more-btn" data-action="more-closed" data-domain="${escapeHtml(site.domain)}" data-label="${escapeHtml(site.label)}">
-                  +${site.entries.length - 5} more
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="m19 9-7 7-7-7"/>
-                  </svg>
-                </button>
-              ` : ''}
-            </div>
+            ` : ''}
           </div>
-        `).join('')}
-      </div>
+        </div>
+      `).join('')}
     </div>
-  `).join('');
+  `;
 }
 
 // ============================================================
@@ -1512,48 +1536,74 @@ async function performSearch(query) {
   if (!searchResults) return;
 
   try {
-    // 获取打开的标签页
+    // 1. 打开的标签页
     const allOpenTabs = await chrome.tabs.query({});
     const realOpenTabs = allOpenTabs.filter(t => t.url && !isSystemUrl(t.url)).map(tab => ({
-      ...tab,
+      url: tab.url,
+      title: tab.title,
+      hostname: extractHostname(tab.url) || '',
       closed: false
     }));
-    
-    // 获取关闭的标签页
+
+    // 2. 关闭的标签页
     const allClosedTabs = getAllClosedTabs();
 
-    // 搜索打开的标签页
-    const openMatches = realOpenTabs.filter(tab => {
-      const title = (tab.title || '').toLowerCase();
-      const url = (tab.url || '').toLowerCase();
-      const hostname = (tab.hostname || '').toLowerCase();
-      return title.includes(query) || url.includes(query) || hostname.includes(query);
-    }).slice(0, 10);
-    
-    // 搜索关闭的标签页
-    const closedMatches = allClosedTabs.filter(tab => {
-      const title = (tab.title || '').toLowerCase();
-      const url = (tab.url || '').toLowerCase();
-      const hostname = (tab.hostname || '').toLowerCase();
-      return title.includes(query) || url.includes(query) || hostname.includes(query);
-    }).slice(0, 10);
+    // 3. 已保存的标签分组（tabs.html 的 coretab_groups）
+    let savedTabs = [];
+    try {
+      const data = await chrome.storage.local.get('coretab_groups');
+      const groups = data['coretab_groups'] || [];
+      for (const group of groups) {
+        if (group.tabs) {
+          for (const tab of group.tabs) {
+            savedTabs.push({
+              url: tab.url,
+              title: tab.title || tab.url,
+              hostname: extractHostname(tab.url) || '',
+              saved: true
+            });
+          }
+        }
+      }
+    } catch (_) {}
 
-    // 合并搜索结果，打开的标签页在前
-    const allMatches = [...openMatches, ...closedMatches].slice(0, 15);
+    // 搜索 + 去重（按 URL）
+    const seenUrls = new Set();
+    const allMatches = [];
+
+    const addIfMatch = (tab, badge) => {
+      const title = (tab.title || '').toLowerCase();
+      const url = (tab.url || '').toLowerCase();
+      const hostname = (tab.hostname || '').toLowerCase();
+      if (title.includes(query) || url.includes(query) || hostname.includes(query)) {
+        if (!seenUrls.has(tab.url)) {
+          seenUrls.add(tab.url);
+          allMatches.push({ ...tab, _badge: badge });
+        }
+      }
+    };
+
+    for (const tab of realOpenTabs) addIfMatch(tab, 'Open');
+    for (const tab of allClosedTabs) addIfMatch(tab, 'Closed');
+    for (const tab of savedTabs) addIfMatch(tab, 'Saved');
 
     if (allMatches.length === 0) {
       searchResults.innerHTML = '<div class="search-no-results">No tabs found</div>';
     } else {
-      searchResults.innerHTML = allMatches.map(tab => {
-        const hostname = tab.closed ? tab.hostname : extractHostname(tab.url) || '';
+      const displayResults = allMatches.slice(0, 30);
+      searchResults.innerHTML = displayResults.map(tab => {
+        const hostname = tab.hostname || extractHostname(tab.url) || '';
+        const isClosed = tab._badge === 'Closed';
+        const isSaved = tab._badge === 'Saved';
+        const action = isClosed ? 'reopen-tab' : 'focus-tab';
         return `
-          <div class="search-result-item${tab.closed ? ' closed' : ''}" data-action="${tab.closed ? 'reopen-tab' : 'focus-tab'}" data-tab-url="${escapeHtml(tab.url)}">
+          <div class="search-result-item${isClosed ? ' closed' : ''}${isSaved ? ' saved' : ''}" data-action="${action}" data-tab-url="${escapeHtml(tab.url)}">
             <img src="https://www.google.com/s2/favicons?domain=${escapeHtml(hostname)}&sz=32" alt="" data-fallback loading="lazy" decoding="async">
             <div class="search-result-info">
               <div class="search-result-title">${escapeHtml(tab.title || tab.url)}</div>
-              <div class="search-result-url">${escapeHtml(tab.closed ? hostname : tab.hostname || '')}</div>
+              <div class="search-result-url">${escapeHtml(isClosed ? hostname : hostname)}</div>
             </div>
-            <span class="search-result-badge">${tab.closed ? 'Closed' : escapeHtml(hostname)}</span>
+            <span class="search-result-badge">${escapeHtml(tab._badge)}</span>
           </div>
         `;
       }).join('');
