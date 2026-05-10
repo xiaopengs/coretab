@@ -62,6 +62,11 @@
   <div class="recent-section" id="recentSection">
     <div class="section-header">
       <h2>Recent Tabs</h2>
+      <button class="section-edit-btn" id="recentFilterEditBtn" data-action="edit-recent-filter" title="Edit tracking rules">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="16" height="16">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0ZM3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0 1.5 1.5 0 0 1 3 0Zm-9.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0 1.5 1.5 0 0 1 3 0Zm-9.75 0h9.75" />
+        </svg>
+      </button>
       <div class="section-line"></div>
       <div class="section-count" id="recentSectionCount"></div>
     </div>
@@ -307,6 +312,38 @@
       </button>
     </div>
     <div class="more-modal-body" id="moreModalBody"></div>
+  </div>
+</div>
+
+<!-- Recent Filter Modal -->
+<div class="more-modal-overlay" id="recentFilterOverlay" style="display:none">
+  <div class="more-modal" style="max-width:520px">
+    <div class="more-modal-header">
+      <h3 class="more-modal-title">Edit Tracking Rules</h3>
+      <button class="more-modal-close" data-action="close-recent-filter">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="more-modal-body" id="recentFilterBody">
+      <p class="filter-hint" id="recentFilterHint">Domains you visit will be tracked in Recent Tabs.</p>
+      <div class="filter-add-row">
+        <input type="text" class="filter-add-input" id="recentFilterInput" placeholder="e.g. figma.com or *.example.com">
+        <button class="filter-add-btn" id="recentFilterAddBtn" data-action="add-recent-filter">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          Add
+        </button>
+      </div>
+      <div class="filter-list" id="recentFilterList"></div>
+      <div class="filter-actions">
+        <button class="filter-save-btn" id="recentFilterSaveBtn" data-action="save-recent-filter">Save Changes</button>
+      </div>
+    </div>
   </div>
 </div>
 

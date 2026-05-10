@@ -56,7 +56,7 @@ const MAX_TABS_PER_DAY = 100;
 // Recent Tabs
 const RECENT_TABS_KEY = 'coretab_recent_tabs';
 const RECENT_TABS_CONFIG_KEY = 'coretab_recent_config';
-const RECENT_TRACKED_DOMAINS = [
+const DEFAULT_TRACKED_DOMAINS = [
   'feishu.cn',
   'larksuite.com',
   'notion.so',
@@ -68,6 +68,30 @@ const RECENT_TRACKED_DOMAINS = [
 ];
 const RECENT_MAX_PER_DOMAIN = 50;
 const RECENT_MAX_TOTAL = 200;
+
+// 当前跟踪域名列表（内存缓存，从 storage 或默认值加载）
+let _trackedDomains = null;
+
+async function getTrackedDomains() {
+  if (_trackedDomains) return _trackedDomains;
+  try {
+    const data = await chrome.storage.local.get(RECENT_TABS_CONFIG_KEY);
+    const domains = data[RECENT_TABS_CONFIG_KEY];
+    if (domains && Array.isArray(domains) && domains.length > 0) {
+      _trackedDomains = domains;
+      return domains;
+    }
+  } catch (_) {}
+  _trackedDomains = [...DEFAULT_TRACKED_DOMAINS];
+  return _trackedDomains;
+}
+
+async function saveTrackedDomains(domains) {
+  _trackedDomains = domains;
+  try {
+    await chrome.storage.local.set({ [RECENT_TABS_CONFIG_KEY]: domains });
+  } catch (_) {}
+}
 
 // Initialization
 async function init() {
@@ -100,7 +124,9 @@ if (document.readyState === 'loading') {
 // Press Esc to close current open dialog
 function getActiveDialog() {
   const moreOverlay = document.getElementById('moreModalOverlay');
-  if (moreOverlay && moreOverlay.style.display !== 'none') return 'more';
+  if (moreOverlay && moreOverlay.classList.contains('visible')) return 'more';
+  const filterOverlay = document.getElementById('recentFilterOverlay');
+  if (filterOverlay && filterOverlay.classList.contains('visible')) return 'filter';
   return 'confirm';
 }
 
@@ -108,15 +134,26 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     const active = getActiveDialog();
     if (active === 'more') { closeMoreModal(); return; }
+    if (active === 'filter') { closeRecentFilterModal(); return; }
     hideConfirmDialog();
+  }
+  // Enter key in filter input
+  if (e.key === 'Enter' && document.activeElement?.id === 'recentFilterInput') {
+    addFilterDomain(document.activeElement.value);
   }
 });
 
-// Click on more-modal overlay (outside content) to close
+// Click on overlay (outside content) to close
+// more-modal
+let _moreOverlayPending = false;
 document.addEventListener('click', (e) => {
   const overlay = document.getElementById('moreModalOverlay');
-  if (overlay && e.target === overlay) {
+  if (overlay && e.target === overlay && !_moreOverlayPending) {
     closeMoreModal();
+  }
+  const filterOverlay = document.getElementById('recentFilterOverlay');
+  if (filterOverlay && e.target === filterOverlay) {
+    closeRecentFilterModal();
   }
 });
 
@@ -204,6 +241,36 @@ document.addEventListener('click', async (e) => {
   // ---- More modal actions ----
   if (action === 'close-more-modal') {
     closeMoreModal();
+    return;
+  }
+
+  if (action === 'close-recent-filter') {
+    closeRecentFilterModal();
+    return;
+  }
+
+  if (action === 'edit-recent-filter') {
+    await openRecentFilterModal();
+    return;
+  }
+
+  if (action === 'add-recent-filter') {
+    e.stopPropagation();
+    const input = document.getElementById('recentFilterInput');
+    if (input) addFilterDomain(input.value);
+    return;
+  }
+
+  if (action === 'remove-filter-domain') {
+    e.stopPropagation();
+    const idx = parseInt(actionEl.dataset.index);
+    if (!isNaN(idx)) removeFilterDomain(idx);
+    return;
+  }
+
+  if (action === 'save-recent-filter') {
+    e.stopPropagation();
+    await saveFilterDomains();
     return;
   }
 
@@ -440,6 +507,106 @@ function closeMoreModal() {
   if (!overlay) return;
   overlay.classList.remove('visible');
   setTimeout(() => { overlay.style.display = 'none'; }, 300);
+}
+
+// ============================================================
+// RECENT FILTER MODAL — 编辑 Recent Tabs 跟踪域名规则
+// ============================================================
+
+// 编辑中的域名临时副本
+let _filterDraft = null;
+
+async function openRecentFilterModal() {
+  const overlay = document.getElementById('recentFilterOverlay');
+  if (!overlay) return;
+  _filterDraft = [...(await getTrackedDomains())];
+  renderFilterList();
+  overlay.style.display = 'flex';
+  requestAnimationFrame(() => overlay.classList.add('visible'));
+  // Focus input
+  setTimeout(() => {
+    const input = document.getElementById('recentFilterInput');
+    if (input) input.focus();
+  }, 100);
+}
+
+function closeRecentFilterModal() {
+  const overlay = document.getElementById('recentFilterOverlay');
+  if (!overlay) return;
+  overlay.classList.remove('visible');
+  setTimeout(() => { overlay.style.display = 'none'; }, 300);
+  _filterDraft = null;
+}
+
+function renderFilterList() {
+  const listEl = document.getElementById('recentFilterList');
+  const hintEl = document.getElementById('recentFilterHint');
+  if (!listEl) return;
+
+  if (!_filterDraft || _filterDraft.length === 0) {
+    listEl.innerHTML = '<div class="filter-empty" style="text-align:center;padding:24px;color:var(--warm-silver);font-size:13px">No domains added yet</div>';
+    if (hintEl) hintEl.textContent = 'Add domains below to start tracking.';
+    return;
+  }
+
+  if (hintEl) hintEl.textContent = `Tracking ${_filterDraft.length} domain${_filterDraft.length > 1 ? 's' : ''}.`;
+
+  listEl.innerHTML = _filterDraft.map((domain, idx) => `
+    <div class="filter-item">
+      <span class="filter-item-label">${escapeHtml(domain)}</span>
+      <button class="filter-item-remove" data-action="remove-filter-domain" data-index="${idx}" title="Remove">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+  `).join('');
+}
+
+function addFilterDomain(raw) {
+  let domain = raw.trim();
+  if (!domain) return;
+
+  // Strip protocol and path
+  try {
+    if (!domain.includes('://')) domain = 'https://' + domain;
+    const u = new URL(domain);
+    domain = u.hostname;
+  } catch {
+    // If it's just a hostname, use as-is
+    if (domain.includes('/') || domain.includes(' ')) return;
+  }
+
+  if (_filterDraft.includes(domain)) {
+    showToast('Domain already in list');
+    return;
+  }
+
+  _filterDraft.push(domain);
+  _filterDraft.sort();
+  renderFilterList();
+
+  const input = document.getElementById('recentFilterInput');
+  if (input) {
+    input.value = '';
+    input.focus();
+  }
+}
+
+function removeFilterDomain(idx) {
+  if (!_filterDraft) return;
+  _filterDraft.splice(idx, 1);
+  renderFilterList();
+}
+
+async function saveFilterDomains() {
+  if (!_filterDraft) return;
+  await saveTrackedDomains(_filterDraft);
+  closeRecentFilterModal();
+  // 重新加载 recent tabs 以反映新的过滤规则
+  await loadRecentTabs();
+  showToast('Tracking rules saved');
 }
 
 async function performConfirmedAction() {
@@ -1243,13 +1410,13 @@ function renderClosedTabs(groups) {
 // ============================================================
 
 // Check if a URL should be tracked
-function shouldTrackUrl(url) {
+async function shouldTrackUrl(url) {
   if (!url) return false;
   try {
     const urlObj = new URL(url);
     const hostname = urlObj.hostname;
-    // Check if hostname matches any of the tracked domains
-    return RECENT_TRACKED_DOMAINS.some(domain => {
+    const trackedDomains = await getTrackedDomains();
+    return trackedDomains.some(domain => {
       if (domain.includes('*')) {
         // Simple wildcard support (e.g., *.example.com)
         const wildcardDomain = domain.replace('*.', '');
@@ -1281,7 +1448,7 @@ async function saveRecentTabs(tabs) {
 
 // Add or update a tab visit
 async function addRecentTab(url, title, visitedAt) {
-  if (!shouldTrackUrl(url)) return;
+  if (!(await shouldTrackUrl(url))) return;
 
   const hostname = extractHostname(url);
   const now = visitedAt || Date.now();
@@ -1319,10 +1486,19 @@ async function addRecentTab(url, title, visitedAt) {
 // Group recent tabs by domain
 async function getRecentTabsGrouped() {
   const tabs = await getRecentTabs();
+  const trackedDomains = await getTrackedDomains();
 
-  // Group by hostname
+  // Group by hostname (only tracked domains)
   const groups = {};
   for (const tab of tabs) {
+    const isTracked = trackedDomains.some(d => {
+      if (d.includes('*')) {
+        const wildcard = d.replace('*.', '');
+        return tab.hostname === wildcard || tab.hostname.endsWith('.' + wildcard);
+      }
+      return tab.hostname === d || tab.hostname.endsWith('.' + d);
+    });
+    if (!isTracked) continue;
     if (!groups[tab.hostname]) {
       groups[tab.hostname] = [];
     }

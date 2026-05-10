@@ -2083,3 +2083,156 @@ header { animation: fadeUp 0.5s ease both; }
 .page-more-btn:hover svg {
   transform: translateY(2px);
 }
+
+/* ============================================================
+   Recent Filter Modal — edit tracking domain rules
+   ============================================================ */
+.section-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: none;
+  color: var(--warm-silver);
+  cursor: pointer;
+  border-radius: var(--radius-sharp);
+  transition: color 0.15s, background 0.15s;
+  margin-right: 4px;
+}
+
+.section-edit-btn:hover {
+  color: var(--matcha-600);
+  background: rgba(7, 138, 82, 0.08);
+}
+
+.filter-hint {
+  font-size: 13px;
+  color: var(--warm-silver);
+  margin: 0 0 16px 0;
+  line-height: 1.5;
+}
+
+.filter-add-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.filter-add-input {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-family: var(--sans);
+  color: var(--ink);
+  background: var(--warm-bg);
+  border: 1px solid var(--oat-border);
+  border-radius: var(--radius-sharp);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.filter-add-input:focus {
+  border-color: var(--matcha-400);
+}
+
+.filter-add-input::placeholder {
+  color: var(--warm-silver-light);
+}
+
+.filter-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--sans);
+  color: var(--matcha-600);
+  background: rgba(7, 138, 82, 0.08);
+  border: 1px solid var(--matcha-200);
+  border-radius: var(--radius-sharp);
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.filter-add-btn:hover {
+  background: var(--matcha-500);
+  color: #fff;
+  border-color: var(--matcha-500);
+}
+
+.filter-list {
+  max-height: 260px;
+  overflow-y: auto;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--warm-bg);
+  border-radius: var(--radius-sharp);
+  border: 1px solid transparent;
+  transition: border-color 0.15s;
+}
+
+.filter-item:hover {
+  border-color: var(--oat-border);
+}
+
+.filter-item-label {
+  font-size: 13px;
+  font-family: var(--sans);
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.filter-item-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: none;
+  color: var(--warm-silver);
+  cursor: pointer;
+  border-radius: var(--radius-sharp);
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.filter-item-remove:hover {
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.08);
+}
+
+.filter-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.filter-save-btn {
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--sans);
+  color: #fff;
+  background: var(--matcha-500);
+  border: none;
+  border-radius: var(--radius-sharp);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.filter-save-btn:hover {
+  background: var(--matcha-700);
+}
