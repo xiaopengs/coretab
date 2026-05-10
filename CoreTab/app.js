@@ -73,24 +73,24 @@ const RECENT_MAX_TOTAL = 200;
 let _trackedDomains = null;
 
 async function getTrackedDomains() {
-  if (_trackedDomains) return _trackedDomains;
+  if (_trackedDomains !== null) return _trackedDomains;
   try {
     const data = await chrome.storage.local.get(RECENT_TABS_CONFIG_KEY);
     const domains = data[RECENT_TABS_CONFIG_KEY];
-    if (domains && Array.isArray(domains) && domains.length > 0) {
+    if (domains && Array.isArray(domains)) {
       _trackedDomains = domains;
       return domains;
     }
-  } catch (_) {}
+  } catch (err) {
+    console.error('[coretab] Failed to read filter config:', err);
+  }
   _trackedDomains = [...DEFAULT_TRACKED_DOMAINS];
   return _trackedDomains;
 }
 
 async function saveTrackedDomains(domains) {
   _trackedDomains = domains;
-  try {
-    await chrome.storage.local.set({ [RECENT_TABS_CONFIG_KEY]: domains });
-  } catch (_) {}
+  await chrome.storage.local.set({ [RECENT_TABS_CONFIG_KEY]: domains });
 }
 
 // Initialization
@@ -515,6 +515,59 @@ function closeMoreModal() {
 
 // 编辑中的域名临时副本
 let _filterDraft = null;
+let _filterListeners = [];
+
+function _bindFilterListeners() {
+  _cleanupFilterListeners();
+  const add = (id, event, handler) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener(event, handler);
+      _filterListeners.push({ el, event, handler });
+    }
+  };
+  add('recentFilterAddBtn', 'click', _onFilterAdd);
+  add('recentFilterSaveBtn', 'click', _onFilterSave);
+  add('recentFilterCloseBtn', 'click', closeRecentFilterModal);
+  add('recentFilterInput', 'keydown', _onFilterInputKey);
+}
+
+function _cleanupFilterListeners() {
+  for (const { el, event, handler } of _filterListeners) {
+    el.removeEventListener(event, handler);
+  }
+  _filterListeners = [];
+}
+
+function _onFilterAdd(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const input = document.getElementById('recentFilterInput');
+  if (input) addFilterDomain(input.value);
+}
+
+async function _onFilterSave(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  if (!_filterDraft) return;
+  try {
+    await saveTrackedDomains([..._filterDraft]);
+  } catch (err) {
+    console.error('[coretab] Failed to save filter domains:', err);
+    showToast('Save failed, please try again');
+    return;
+  }
+  closeRecentFilterModal();
+  await loadRecentTabs();
+  showToast('Tracking rules saved');
+}
+
+function _onFilterInputKey(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    addFilterDomain(e.target.value);
+  }
+}
 
 async function openRecentFilterModal() {
   const overlay = document.getElementById('recentFilterOverlay');
@@ -523,7 +576,7 @@ async function openRecentFilterModal() {
   renderFilterList();
   overlay.style.display = 'flex';
   requestAnimationFrame(() => overlay.classList.add('visible'));
-  // Focus input
+  _bindFilterListeners();
   setTimeout(() => {
     const input = document.getElementById('recentFilterInput');
     if (input) input.focus();
@@ -531,6 +584,7 @@ async function openRecentFilterModal() {
 }
 
 function closeRecentFilterModal() {
+  _cleanupFilterListeners();
   const overlay = document.getElementById('recentFilterOverlay');
   if (!overlay) return;
   overlay.classList.remove('visible');
@@ -600,15 +654,7 @@ function removeFilterDomain(idx) {
   renderFilterList();
 }
 
-async function saveFilterDomains() {
-  if (!_filterDraft) return;
-  await saveTrackedDomains(_filterDraft);
-  closeRecentFilterModal();
-  // 重新加载 recent tabs 以反映新的过滤规则
-  await loadRecentTabs();
-  showToast('Tracking rules saved');
-}
-
+// saveFilterDomains replaced by _onFilterSave (explicit listener)
 async function performConfirmedAction() {
   if (pendingConfirmCallback) {
     const callback = pendingConfirmCallback;
