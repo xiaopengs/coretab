@@ -115,6 +115,7 @@ test('包含响应式适配', css.includes('@media'));
 test('包含 Quick Navigation 样式', css.includes('.quick-nav-section') && css.includes('.quick-nav-card'));
 test('Quick Navigation 主面板限制两行并提供 More 样式', css.includes('max-height: 118px') && css.includes('.quick-nav-more-card') && css.includes('.quick-nav-error'));
 test('按钮 hover/active 不产生位移抖动', css.includes('transform: none !important') && css.includes('quick-nav-confirm-btn'));
+test('其他模块 hover 不再定义 translateY/scale 抖动', !css.includes('transform: translateY(-') && !css.includes('transform: translateY(0) scale') && !css.includes('transform: scale(1.02)') && !css.includes('transform: scale(1.1)') && !css.includes('rotateZ(-4deg) scale'));
 test('包含 Recent Tabs 样式', css.includes('.recent-section') && css.includes('.recent-card'));
 test('包含 GitHub Trending 样式', css.includes('.github-section') && css.includes('.github-card'));
 test('包含弹窗样式', css.includes('.confirm-dialog') && css.includes('.more-modal'));

@@ -214,11 +214,11 @@ header .date {
 .search-clear:hover {
   background: var(--pomegranate-400);
   color: white;
-  transform: scale(1.1);
+  transform: none;
 }
 
 .search-clear:active {
-  transform: scale(0.95);
+  transform: none;
 }
 
 .search-clear svg {
@@ -341,7 +341,7 @@ header .date {
 }
 
 .settings-btn:hover {
-  transform: rotateZ(-6deg) scale(1.08);
+  transform: none;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
   border-color: var(--matcha-600);
   color: var(--matcha-600);
@@ -353,7 +353,7 @@ header .date {
 }
 
 .settings-btn:active {
-  transform: rotateZ(-6deg) scale(1.04);
+  transform: none;
 }
 
 .settings-btn svg {
@@ -439,7 +439,7 @@ header .date {
 }
 
 .pill-btn:active {
-  transform: translateY(0) scale(0.98);
+  transform: none;
 }
 
 .pill-btn svg {
@@ -507,7 +507,7 @@ header .date {
 }
 
 .window-card:hover {
-  transform: translateY(-2px);
+  transform: none;
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
@@ -568,11 +568,11 @@ header .date {
 
 .close-window-btn.compact:hover {
   background: var(--matcha-600);
-  transform: scale(1.02);
+  transform: none;
 }
 
 .close-window-btn.compact:active {
-  transform: scale(0.98);
+  transform: none;
 }
 
 .window-card-domains {
@@ -636,12 +636,12 @@ header .date {
 .domain-chip:hover {
   background: var(--pure-white);
   border-color: var(--oat-border);
-  transform: translateY(-1px);
+  transform: none;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .domain-chip:active {
-  transform: translateY(0);
+  transform: none;
 }
 
 .domain-chip .chip-favicon {
@@ -687,7 +687,7 @@ header .date {
 .domain-chip .chip-close:hover {
   background: var(--pomegranate-400);
   color: white;
-  transform: scale(1.15);
+  transform: none;
 }
 
 .domain-chip-overflow {
@@ -914,7 +914,7 @@ header .date {
   background: var(--pomegranate-400);
   border-color: var(--pomegranate-400);
   color: var(--pure-white);
-  transform: rotateZ(-4deg) scale(1.1);
+  transform: none;
 }
 
 .chip-action:focus-visible {
@@ -955,7 +955,7 @@ header .date {
 .action-btn:hover {
   background: var(--clay-black);
   color: var(--pure-white);
-  transform: translateY(-1px);
+  transform: none;
 }
 
 .action-btn:focus-visible {
@@ -964,7 +964,7 @@ header .date {
 }
 
 .action-btn:active {
-  transform: translateY(0) scale(0.98);
+  transform: none;
 }
 
 .action-btn svg {
@@ -995,7 +995,7 @@ header .date {
 }
 
 .action-btn.close-all-inline:active {
-  transform: translateY(0) scale(0.98);
+  transform: none;
 }
 
 /* ============================================================
@@ -1109,7 +1109,7 @@ header .date {
 }
 
 .history-card:hover {
-  transform: translateY(-2px);
+  transform: none;
   box-shadow: 0 6px 20px rgba(0,0,0,0.1), var(--clay-shadow);
   border-color: var(--oat-dark);
 }
@@ -1379,7 +1379,7 @@ header .date {
 .closed-open-all:hover {
   background: var(--matcha-green);
   color: white;
-  transform: scale(1.05);
+  transform: none;
 }
 
 .closed-open-all svg {
@@ -1644,7 +1644,7 @@ header .date {
 }
 
 .github-card:hover {
-  transform: translateY(-2px);
+  transform: none;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
@@ -1782,7 +1782,7 @@ header .date {
 }
 
 .confirm-dialog:hover .confirm-icon {
-  transform: rotateZ(-5deg) scale(1.05);
+  transform: none;
 }
 
 .confirm-icon svg {
@@ -1960,7 +1960,7 @@ header { animation: fadeUp 0.5s ease both; }
   max-height: 70vh;
   border: 1.5px solid var(--oat-border);
   box-shadow: 0 20px 60px rgba(0,0,0,0.15), var(--clay-shadow);
-  transform: scale(0.95);
+  transform: none;
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   overflow: hidden;
   display: flex;
@@ -2081,7 +2081,7 @@ header { animation: fadeUp 0.5s ease both; }
 }
 
 .page-more-btn:hover svg {
-  transform: translateY(2px);
+  transform: none;
 }
 
 /* ============================================================
@@ -2272,7 +2272,7 @@ header { animation: fadeUp 0.5s ease both; }
 .quick-nav-add-card:hover {
   background: var(--oat-light);
   border-color: var(--matcha-200);
-  transform: translateY(-1px);
+  transform: none;
 }
 
 .quick-nav-favicon {
@@ -2420,7 +2420,7 @@ header { animation: fadeUp 0.5s ease both; }
 .quick-nav-more-card:hover {
   background: rgba(7, 138, 82, 0.08);
   border-color: var(--matcha-400);
-  transform: translateY(-1px);
+  transform: none;
 }
 
 .quick-nav-more-card span {
