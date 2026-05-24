@@ -77,7 +77,7 @@ test('render-tabs 包含三类标签渲染', js['coretab-render-tabs.js'].includ
 test('recent 独立管理 Recent Tabs', js['coretab-recent.js'].includes('getRecentTabsGrouped') && js['coretab-recent.js'].includes('renderRecentTabs'));
 test('quick-nav 独立管理常用网站导航', js['coretab-quick-nav.js'].includes('getQuickNavLinks') && js['coretab-quick-nav.js'].includes('renderQuickNav'));
 test('quick-nav 包含新增默认 AI/SkillHub 站点', js['coretab-config.js'].includes('Kimi') && js['coretab-config.js'].includes('DeepSeek') && js['coretab-config.js'].includes('智谱 GLM') && js['coretab-config.js'].includes('腾讯 SkillHub'));
-test('quick-nav 会合并新增默认站点', js['coretab-quick-nav.js'].includes('mergeDefaultQuickNavLinks') && js['coretab-quick-nav.js'].includes('missingDefaults'));
+test('quick-nav 不会复活用户删除的默认站点', !js['coretab-quick-nav.js'].includes('mergeDefaultQuickNavLinks') && js['coretab-quick-nav.js'].includes('storage is the source of truth'));
 test('ui 包含搜索、toast、GitHub 渲染', js['coretab-ui.js'].includes('performSearch') && js['coretab-ui.js'].includes('showToast'));
 test('main 负责初始化启动', js['coretab-main.js'].includes('async function init()') && js['coretab-main.js'].includes('DOMContentLoaded'));
 
