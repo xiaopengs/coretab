@@ -64,7 +64,7 @@ for (const file of jsFiles) {
 }
 test('脚本按依赖顺序加载：config 在 main 前', html.indexOf('js/coretab-config.js') < html.indexOf('js/coretab-main.js'));
 test('脚本按依赖顺序加载：ui 在 main 前', html.indexOf('js/coretab-ui.js') < html.indexOf('js/coretab-main.js'));
-test('包含 Quick Navigation 弹窗确认/取消与错误提示', html.includes('id="quickNavSaveBtn"') && html.includes('id="quickNavError"') && html.includes('data-action="close-quick-nav-modal"'));
+test('包含 Quick Navigation 弹窗确认/取消与错误提示', html.includes('id="quickNavSaveBtn"') && html.includes('quick-nav-confirm-btn') && html.includes('Confirm') && html.includes('id="quickNavError"') && html.includes('data-action="close-quick-nav-modal"'));
 test('不依赖远程 Google Fonts', !html.includes('fonts.googleapis.com') && !html.includes('fonts.gstatic.com'));
 
 console.log('\n--- 拆分职责测试 ---\n');
@@ -114,6 +114,7 @@ test('包含设计 token', css.includes(':root') && css.includes('--cream'));
 test('包含响应式适配', css.includes('@media'));
 test('包含 Quick Navigation 样式', css.includes('.quick-nav-section') && css.includes('.quick-nav-card'));
 test('Quick Navigation 主面板限制两行并提供 More 样式', css.includes('max-height: 118px') && css.includes('.quick-nav-more-card') && css.includes('.quick-nav-error'));
+test('按钮 hover/active 不产生位移抖动', css.includes('transform: none !important') && css.includes('quick-nav-confirm-btn'));
 test('包含 Recent Tabs 样式', css.includes('.recent-section') && css.includes('.recent-card'));
 test('包含 GitHub Trending 样式', css.includes('.github-section') && css.includes('.github-card'));
 test('包含弹窗样式', css.includes('.confirm-dialog') && css.includes('.more-modal'));

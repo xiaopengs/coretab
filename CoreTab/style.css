@@ -2463,3 +2463,71 @@ header { animation: fadeUp 0.5s ease both; }
   opacity: 1;
   pointer-events: auto;
 }
+
+/* Disable jittery button/card motion globally. Keep color feedback, no movement. */
+button,
+.pill-btn,
+.filter-save-btn,
+.quick-nav-confirm-btn,
+.quick-nav-card,
+.quick-nav-add-card,
+.quick-nav-more-card,
+.card,
+.tab-card,
+.repo-card {
+  transform: none !important;
+}
+
+button:hover,
+button:active,
+button:focus,
+.pill-btn:hover,
+.pill-btn:active,
+.filter-save-btn:hover,
+.filter-save-btn:active,
+.quick-nav-confirm-btn:hover,
+.quick-nav-confirm-btn:active,
+.quick-nav-card:hover,
+.quick-nav-card:active,
+.quick-nav-add-card:hover,
+.quick-nav-add-card:active,
+.quick-nav-more-card:hover,
+.quick-nav-more-card:active,
+.card:hover,
+.tab-card:hover,
+.repo-card:hover {
+  transform: none !important;
+}
+
+.quick-nav-confirm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 112px;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--sans);
+  color: #fff;
+  background: var(--matcha-500);
+  border: none;
+  border-radius: var(--radius-sharp);
+  cursor: pointer;
+  line-height: 1.2;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.quick-nav-confirm-btn:hover {
+  background: var(--matcha-700);
+}
+
+.quick-nav-confirm-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.quick-nav-cancel-btn {
+  flex-shrink: 0;
+}

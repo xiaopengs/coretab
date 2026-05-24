@@ -220,7 +220,7 @@ async function saveQuickNavFromModal() {
   } finally {
     if (saveBtn) {
       saveBtn.disabled = false;
-      saveBtn.textContent = 'Save Website';
+      saveBtn.textContent = 'Confirm';
     }
   }
 }
