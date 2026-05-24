@@ -6,6 +6,8 @@ function getActiveDialog() {
   if (moreOverlay && moreOverlay.classList.contains('visible')) return 'more';
   const filterOverlay = document.getElementById('recentFilterOverlay');
   if (filterOverlay && filterOverlay.classList.contains('visible')) return 'filter';
+  const quickNavOverlay = document.getElementById('quickNavOverlay');
+  if (quickNavOverlay && quickNavOverlay.classList.contains('visible')) return 'quick-nav';
   return 'confirm';
 }
 
@@ -14,11 +16,15 @@ document.addEventListener('keydown', (e) => {
     const active = getActiveDialog();
     if (active === 'more') { closeMoreModal(); return; }
     if (active === 'filter') { closeRecentFilterModal(); return; }
+    if (active === 'quick-nav') { closeQuickNavModal(); return; }
     hideConfirmDialog();
   }
   // Enter key in filter input
   if (e.key === 'Enter' && document.activeElement?.id === 'recentFilterInput') {
     addFilterDomain(document.activeElement.value);
+  }
+  if (e.key === 'Enter' && document.activeElement?.id === 'quickNavUrlInput') {
+    saveQuickNavFromModal();
   }
 });
 
@@ -33,6 +39,10 @@ document.addEventListener('click', (e) => {
   const filterOverlay = document.getElementById('recentFilterOverlay');
   if (filterOverlay && e.target === filterOverlay) {
     closeRecentFilterModal();
+  }
+  const quickNavOverlay = document.getElementById('quickNavOverlay');
+  if (quickNavOverlay && e.target === quickNavOverlay) {
+    closeQuickNavModal();
   }
 });
 
@@ -108,6 +118,42 @@ document.addEventListener('click', async (e) => {
     if (tabUrl) {
       await focusTabByUrl(tabUrl);
     }
+    return;
+  }
+
+  // ---- Quick Navigation ----
+  if (action === 'open-quick-nav') {
+    const url = actionEl.dataset.url;
+    if (url) chrome.tabs.create({ url, active: true });
+    return;
+  }
+
+  if (action === 'add-quick-nav') {
+    e.stopPropagation();
+    openQuickNavModal();
+    return;
+  }
+
+  if (action === 'edit-quick-nav') {
+    e.stopPropagation();
+    await editQuickNavLink(actionEl.dataset.id);
+    return;
+  }
+
+  if (action === 'delete-quick-nav') {
+    e.stopPropagation();
+    await deleteQuickNavLink(actionEl.dataset.id);
+    return;
+  }
+
+  if (action === 'close-quick-nav-modal') {
+    closeQuickNavModal();
+    return;
+  }
+
+  if (action === 'save-quick-nav') {
+    e.stopPropagation();
+    await saveQuickNavFromModal();
     return;
   }
 

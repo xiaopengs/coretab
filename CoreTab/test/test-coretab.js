@@ -25,6 +25,7 @@ const jsFiles = [
   'coretab-utils.js',
   'coretab-render-tabs.js',
   'coretab-recent.js',
+  'coretab-quick-nav.js',
   'coretab-ui.js',
   'coretab-main.js'
 ];
@@ -74,6 +75,7 @@ test('data 包含 Chrome API 数据加载', js['coretab-data.js'].includes('load
 test('utils 包含 URL/标题/时间工具', js['coretab-utils.js'].includes('extractHostname') && js['coretab-utils.js'].includes('timeAgo'));
 test('render-tabs 包含三类标签渲染', js['coretab-render-tabs.js'].includes('renderOpenTabs') && js['coretab-render-tabs.js'].includes('renderClosedTabs'));
 test('recent 独立管理 Recent Tabs', js['coretab-recent.js'].includes('getRecentTabsGrouped') && js['coretab-recent.js'].includes('renderRecentTabs'));
+test('quick-nav 独立管理常用网站导航', js['coretab-quick-nav.js'].includes('getQuickNavLinks') && js['coretab-quick-nav.js'].includes('renderQuickNav'));
 test('ui 包含搜索、toast、GitHub 渲染', js['coretab-ui.js'].includes('performSearch') && js['coretab-ui.js'].includes('showToast'));
 test('main 负责初始化启动', js['coretab-main.js'].includes('async function init()') && js['coretab-main.js'].includes('DOMContentLoaded'));
 
@@ -92,6 +94,7 @@ console.log('\n--- 功能存在性测试 ---\n');
 test('初始化 Dashboard', combinedAppJs.includes('async function init()') && combinedAppJs.includes('renderDashboard'));
 test('加载 Open Tabs', combinedAppJs.includes('loadOpenTabs'));
 test('加载 Closed Tabs', combinedAppJs.includes('loadClosedTabs'));
+test('加载 Quick Navigation', combinedAppJs.includes('loadQuickNav'));
 test('加载 Recent Tabs', combinedAppJs.includes('loadRecentTabs'));
 test('加载 History', combinedAppJs.includes('loadHistory'));
 test('加载 GitHub Trending', combinedAppJs.includes('loadGitHubTrending'));
@@ -104,6 +107,7 @@ console.log('\n--- style.css 测试 ---\n');
 
 test('包含设计 token', css.includes(':root') && css.includes('--cream'));
 test('包含响应式适配', css.includes('@media'));
+test('包含 Quick Navigation 样式', css.includes('.quick-nav-section') && css.includes('.quick-nav-card'));
 test('包含 Recent Tabs 样式', css.includes('.recent-section') && css.includes('.recent-card'));
 test('包含 GitHub Trending 样式', css.includes('.github-section') && css.includes('.github-card'));
 test('包含弹窗样式', css.includes('.confirm-dialog') && css.includes('.more-modal'));

@@ -10,6 +10,7 @@ async function init() {
 
 async function renderDashboard() {
   await Promise.all([
+    loadQuickNav(),
     loadOpenTabs(),
     loadClosedTabs(),
     loadRecentTabs(),

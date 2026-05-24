@@ -54,6 +54,17 @@ const CLOSED_TABS_KEY = 'coretab_closed_tabs';
 const MAX_TABS_PER_DOMAIN = 20;
 const MAX_TABS_PER_DAY = 100;
 
+// Quick Navigation
+const QUICK_NAV_KEY = 'coretab_quick_nav';
+const DEFAULT_QUICK_NAV_LINKS = [
+  { title: 'GitHub', url: 'https://github.com' },
+  { title: 'Google', url: 'https://www.google.com' },
+  { title: 'YouTube', url: 'https://www.youtube.com' },
+  { title: 'Notion', url: 'https://www.notion.so' },
+  { title: 'Feishu', url: 'https://www.feishu.cn' },
+  { title: 'Gmail', url: 'https://mail.google.com' }
+];
+
 // Recent Tabs
 const RECENT_TABS_KEY = 'coretab_recent_tabs';
 const RECENT_TABS_CONFIG_KEY = 'coretab_recent_config';

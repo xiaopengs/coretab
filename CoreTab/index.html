@@ -53,6 +53,23 @@
   </header>
 
   <!-- ================================================================
+       QUICK NAVIGATION — Frequently used websites, editable compact cards
+       ================================================================ -->
+  <div class="quick-nav-section" id="quickNavSection">
+    <div class="section-header compact-header">
+      <h2>Navigation</h2>
+      <button class="section-edit-btn" data-action="add-quick-nav" title="Add website">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" width="16" height="16">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
+      </button>
+      <div class="section-line"></div>
+      <div class="section-count" id="quickNavCount"></div>
+    </div>
+    <div class="quick-nav-grid" id="quickNavGrid"></div>
+  </div>
+
+  <!-- ================================================================
        RECENT TABS — Recently visited important pages (feishu, notion, etc.)
        ================================================================ -->
   <div class="recent-section" id="recentSection">
@@ -343,6 +360,32 @@
   </div>
 </div>
 
+<!-- Quick Navigation Modal -->
+<div class="more-modal-overlay" id="quickNavOverlay" style="display:none">
+  <div class="more-modal quick-nav-modal" style="max-width:520px">
+    <div class="more-modal-header">
+      <h3 class="more-modal-title" id="quickNavModalTitle">Add Website</h3>
+      <button class="more-modal-close" data-action="close-quick-nav-modal">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <div class="more-modal-body">
+      <p class="filter-hint">Add a frequently used website. It will appear as a compact card above Recent Tabs.</p>
+      <input type="hidden" id="quickNavEditId">
+      <label class="quick-nav-field-label" for="quickNavTitleInput">Name</label>
+      <input type="text" class="filter-add-input quick-nav-input" id="quickNavTitleInput" placeholder="e.g. GitHub">
+      <label class="quick-nav-field-label" for="quickNavUrlInput">URL</label>
+      <input type="text" class="filter-add-input quick-nav-input" id="quickNavUrlInput" placeholder="e.g. https://github.com">
+      <div class="filter-actions quick-nav-actions">
+        <button class="filter-save-btn" data-action="save-quick-nav">Save Website</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Main app logic: split by responsibility, loaded as classic scripts to preserve current behavior -->
 <script src="js/coretab-config.js"></script>
 <script src="js/coretab-events.js"></script>
@@ -351,6 +394,7 @@
 <script src="js/coretab-utils.js"></script>
 <script src="js/coretab-render-tabs.js"></script>
 <script src="js/coretab-recent.js"></script>
+<script src="js/coretab-quick-nav.js"></script>
 <script src="js/coretab-ui.js"></script>
 <script src="js/coretab-main.js"></script>
 </body>
