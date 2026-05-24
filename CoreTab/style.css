@@ -2391,3 +2391,75 @@ header { animation: fadeUp 0.5s ease both; }
     padding: 9px 10px;
   }
 }
+
+/* Quick Navigation interaction refinements */
+.quick-nav-grid {
+  grid-auto-rows: 54px;
+  max-height: 118px;
+  overflow: hidden;
+}
+
+.quick-nav-more-card {
+  min-height: 54px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px dashed var(--matcha-200);
+  background: var(--oat-light);
+  color: var(--matcha-700);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 650;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+
+.quick-nav-more-card:hover {
+  background: rgba(7, 138, 82, 0.08);
+  border-color: var(--matcha-400);
+  transform: translateY(-1px);
+}
+
+.quick-nav-more-card span {
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.quick-nav-error {
+  margin-top: 12px;
+  padding: 9px 11px;
+  border-radius: 8px;
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.18);
+  color: #b91c1c;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.quick-nav-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.quick-nav-actions .filter-save-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.quick-nav-list-card {
+  margin-bottom: 10px;
+}
+
+.more-modal-body .quick-nav-list-card {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.more-modal-body .quick-nav-list-card .quick-nav-card-actions {
+  opacity: 1;
+  pointer-events: auto;
+}

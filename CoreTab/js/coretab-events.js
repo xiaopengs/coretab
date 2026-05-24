@@ -2,12 +2,12 @@
 // Keyboard handler for dialogs
 // Press Esc to close current open dialog
 function getActiveDialog() {
+  const quickNavOverlay = document.getElementById('quickNavOverlay');
+  if (quickNavOverlay && quickNavOverlay.classList.contains('visible')) return 'quick-nav';
   const moreOverlay = document.getElementById('moreModalOverlay');
   if (moreOverlay && moreOverlay.classList.contains('visible')) return 'more';
   const filterOverlay = document.getElementById('recentFilterOverlay');
   if (filterOverlay && filterOverlay.classList.contains('visible')) return 'filter';
-  const quickNavOverlay = document.getElementById('quickNavOverlay');
-  if (quickNavOverlay && quickNavOverlay.classList.contains('visible')) return 'quick-nav';
   return 'confirm';
 }
 
@@ -23,7 +23,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && document.activeElement?.id === 'recentFilterInput') {
     addFilterDomain(document.activeElement.value);
   }
-  if (e.key === 'Enter' && document.activeElement?.id === 'quickNavUrlInput') {
+  if (e.key === 'Enter' && (document.activeElement?.id === 'quickNavUrlInput' || document.activeElement?.id === 'quickNavTitleInput')) {
     saveQuickNavFromModal();
   }
 });
@@ -154,6 +154,12 @@ document.addEventListener('click', async (e) => {
   if (action === 'save-quick-nav') {
     e.stopPropagation();
     await saveQuickNavFromModal();
+    return;
+  }
+
+  if (action === 'more-quick-nav') {
+    e.stopPropagation();
+    await openQuickNavListModal();
     return;
   }
 

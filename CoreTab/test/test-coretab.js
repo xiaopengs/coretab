@@ -64,6 +64,7 @@ for (const file of jsFiles) {
 }
 test('脚本按依赖顺序加载：config 在 main 前', html.indexOf('js/coretab-config.js') < html.indexOf('js/coretab-main.js'));
 test('脚本按依赖顺序加载：ui 在 main 前', html.indexOf('js/coretab-ui.js') < html.indexOf('js/coretab-main.js'));
+test('包含 Quick Navigation 弹窗确认/取消与错误提示', html.includes('id="quickNavSaveBtn"') && html.includes('id="quickNavError"') && html.includes('data-action="close-quick-nav-modal"'));
 test('不依赖远程 Google Fonts', !html.includes('fonts.googleapis.com') && !html.includes('fonts.gstatic.com'));
 
 console.log('\n--- 拆分职责测试 ---\n');
@@ -78,6 +79,8 @@ test('recent 独立管理 Recent Tabs', js['coretab-recent.js'].includes('getRec
 test('quick-nav 独立管理常用网站导航', js['coretab-quick-nav.js'].includes('getQuickNavLinks') && js['coretab-quick-nav.js'].includes('renderQuickNav'));
 test('quick-nav 包含新增默认 AI/SkillHub 站点', js['coretab-config.js'].includes('Kimi') && js['coretab-config.js'].includes('DeepSeek') && js['coretab-config.js'].includes('智谱 GLM') && js['coretab-config.js'].includes('腾讯 SkillHub'));
 test('quick-nav 不会复活用户删除的默认站点', !js['coretab-quick-nav.js'].includes('mergeDefaultQuickNavLinks') && js['coretab-quick-nav.js'].includes('storage is the source of truth'));
+test('quick-nav 支持两行折叠与更多列表', js['coretab-quick-nav.js'].includes('getQuickNavCollapsedSlots') && js['coretab-quick-nav.js'].includes('more-quick-nav') && js['coretab-quick-nav.js'].includes('openQuickNavListModal'));
+test('quick-nav 支持保存异常与重复 URL 校验', js['coretab-quick-nav.js'].includes('setQuickNavError') && js['coretab-quick-nav.js'].includes('This URL already exists') && js['coretab-quick-nav.js'].includes('Failed to save'));
 test('ui 包含搜索、toast、GitHub 渲染', js['coretab-ui.js'].includes('performSearch') && js['coretab-ui.js'].includes('showToast'));
 test('main 负责初始化启动', js['coretab-main.js'].includes('async function init()') && js['coretab-main.js'].includes('DOMContentLoaded'));
 
@@ -110,6 +113,7 @@ console.log('\n--- style.css 测试 ---\n');
 test('包含设计 token', css.includes(':root') && css.includes('--cream'));
 test('包含响应式适配', css.includes('@media'));
 test('包含 Quick Navigation 样式', css.includes('.quick-nav-section') && css.includes('.quick-nav-card'));
+test('Quick Navigation 主面板限制两行并提供 More 样式', css.includes('max-height: 118px') && css.includes('.quick-nav-more-card') && css.includes('.quick-nav-error'));
 test('包含 Recent Tabs 样式', css.includes('.recent-section') && css.includes('.recent-card'));
 test('包含 GitHub Trending 样式', css.includes('.github-section') && css.includes('.github-card'));
 test('包含弹窗样式', css.includes('.confirm-dialog') && css.includes('.more-modal'));

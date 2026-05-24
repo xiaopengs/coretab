@@ -379,8 +379,10 @@
       <input type="text" class="filter-add-input quick-nav-input" id="quickNavTitleInput" placeholder="e.g. GitHub">
       <label class="quick-nav-field-label" for="quickNavUrlInput">URL</label>
       <input type="text" class="filter-add-input quick-nav-input" id="quickNavUrlInput" placeholder="e.g. https://github.com">
+      <div class="quick-nav-error" id="quickNavError" style="display:none"></div>
       <div class="filter-actions quick-nav-actions">
-        <button class="filter-save-btn" data-action="save-quick-nav">Save Website</button>
+        <button class="pill-btn secondary" data-action="close-quick-nav-modal">Cancel</button>
+        <button class="filter-save-btn" id="quickNavSaveBtn" data-action="save-quick-nav" type="button">Save Website</button>
       </div>
     </div>
   </div>
