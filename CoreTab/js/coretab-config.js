@@ -62,7 +62,11 @@ const DEFAULT_QUICK_NAV_LINKS = [
   { title: 'YouTube', url: 'https://www.youtube.com' },
   { title: 'Notion', url: 'https://www.notion.so' },
   { title: 'Feishu', url: 'https://www.feishu.cn' },
-  { title: 'Gmail', url: 'https://mail.google.com' }
+  { title: 'Gmail', url: 'https://mail.google.com' },
+  { title: 'Kimi', url: 'https://kimi.moonshot.cn' },
+  { title: 'DeepSeek', url: 'https://chat.deepseek.com' },
+  { title: '智谱 GLM', url: 'https://chatglm.cn' },
+  { title: '腾讯 SkillHub', url: 'https://skillhub.tencent.com' }
 ];
 
 // Recent Tabs

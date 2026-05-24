@@ -26,21 +26,46 @@ function getQuickNavDomain(url) {
   }
 }
 
-async function getQuickNavLinks() {
-  try {
-    const result = await chrome.storage.local.get(QUICK_NAV_KEY);
-    const links = result[QUICK_NAV_KEY];
-    if (Array.isArray(links) && links.length > 0) return links;
-  } catch (err) {
-    console.error('[coretab] Failed to load quick nav:', err);
-  }
-
-  const defaults = DEFAULT_QUICK_NAV_LINKS.map(link => ({
+function buildQuickNavLink(link) {
+  return {
     id: createQuickNavId(),
     title: link.title,
     url: normalizeQuickNavUrl(link.url),
     createdAt: Date.now()
-  }));
+  };
+}
+
+async function mergeDefaultQuickNavLinks(links) {
+  const normalizedLinks = Array.isArray(links) ? links : [];
+  const existingUrls = new Set(
+    normalizedLinks
+      .map(link => normalizeQuickNavUrl(link.url))
+      .filter(Boolean)
+  );
+
+  const missingDefaults = DEFAULT_QUICK_NAV_LINKS
+    .map(buildQuickNavLink)
+    .filter(link => link.url && !existingUrls.has(link.url));
+
+  if (missingDefaults.length === 0) return normalizedLinks;
+
+  const mergedLinks = [...normalizedLinks, ...missingDefaults];
+  await saveQuickNavLinks(mergedLinks);
+  return mergedLinks;
+}
+
+async function getQuickNavLinks() {
+  try {
+    const result = await chrome.storage.local.get(QUICK_NAV_KEY);
+    const links = result[QUICK_NAV_KEY];
+    if (Array.isArray(links) && links.length > 0) {
+      return mergeDefaultQuickNavLinks(links);
+    }
+  } catch (err) {
+    console.error('[coretab] Failed to load quick nav:', err);
+  }
+
+  const defaults = DEFAULT_QUICK_NAV_LINKS.map(buildQuickNavLink);
   await saveQuickNavLinks(defaults);
   return defaults;
 }
