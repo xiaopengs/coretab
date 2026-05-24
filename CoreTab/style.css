@@ -2491,27 +2491,14 @@ button:focus,
 }
 
 .quick-nav-confirm-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 112px;
-  padding: 10px 20px;
-  font-size: 13px;
-  font-weight: 700;
-  font-family: var(--sans);
-  color: #fff;
   background: #078a52;
-  border: none;
-  border-radius: var(--radius-sharp);
-  cursor: pointer;
-  line-height: 1.2;
-  white-space: nowrap;
-  flex-shrink: 0;
-  transition: background 0.15s ease, opacity 0.15s ease;
+  color: #fff;
+  border-color: #078a52;
 }
 
 .quick-nav-confirm-btn:hover {
   background: #056835;
+  border-color: #056835;
 }
 
 .quick-nav-confirm-btn:disabled {
