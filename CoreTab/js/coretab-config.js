@@ -1,0 +1,95 @@
+/* CoreTab config/state: constants, shared state, Recent Tabs rule storage. */
+/* ============================================================
+   CoreTab — Main Application Logic
+   Default New Tab Page with Tab Management + GitHub Trending
+   ============================================================ */
+
+'use strict';
+
+// State
+let windowGroups = [];  // [{windowId, windowName, domains: [{domain, label, tabs}]}]
+let historyGroups = [];
+
+// Constants
+const LANDING_PAGE_PATTERNS = [
+  { hostname: 'mail.google.com', pathExact: ['/mail/u/0/', '/mail/u/1/'] },
+  { hostname: 'github.com', pathExact: ['/'] },
+  { hostname: 'twitter.com', pathExact: ['/home'] },
+  { hostname: 'x.com', pathExact: ['/home'] },
+];
+
+const GITHUB_API_URL = 'https://api.github.com/search/repositories?q=stars:>1000&sort=stars&order=desc&per_page=6';
+
+// ── Favicon Fallback ───────────────────────────────────
+// Default SVG globe icon shown when favicon fails to load
+const DEFAULT_FAVICON = 'data:image/svg+xml,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="1.5">' +
+  '<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>'
+);
+
+// Capture-phase error handler — catches all [data-fallback] img errors,
+// including dynamically-added images (error event doesn't bubble on <img>)
+document.addEventListener('error', (e) => {
+  const img = e.target;
+  if (img && img.matches && img.matches('[data-fallback]')) {
+    img.src = DEFAULT_FAVICON;
+  }
+}, true);
+const GITHUB_CACHE_KEY = 'coretab_github_trending';
+const GITHUB_CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+
+const SYSTEM_URL_PREFIXES = [
+  'chrome://', 'chrome-extension://', 'about:', 'edge://', 'brave://', 'devtools://'
+];
+
+// 例外：这些chrome://页面应该显示在opentabs下面
+const ALLOWED_CHROME_PAGES = [
+  'chrome://newtab/',
+  'chrome://newtab',
+  'chrome://extensions/',
+  'chrome://extensions'
+];
+
+const CLOSED_TABS_KEY = 'coretab_closed_tabs';
+const MAX_TABS_PER_DOMAIN = 20;
+const MAX_TABS_PER_DAY = 100;
+
+// Recent Tabs
+const RECENT_TABS_KEY = 'coretab_recent_tabs';
+const RECENT_TABS_CONFIG_KEY = 'coretab_recent_config';
+const DEFAULT_TRACKED_DOMAINS = [
+  'feishu.cn',
+  'larksuite.com',
+  'notion.so',
+  'docs.google.com',
+  'drive.google.com',
+  'slides.google.com',
+  'sheets.google.com',
+  'elink.e.hihonor.com'
+];
+const RECENT_MAX_PER_DOMAIN = 50;
+const RECENT_MAX_TOTAL = 200;
+
+// 当前跟踪域名列表（内存缓存，从 storage 或默认值加载）
+let _trackedDomains = null;
+
+async function getTrackedDomains() {
+  if (_trackedDomains !== null) return _trackedDomains;
+  try {
+    const data = await chrome.storage.local.get(RECENT_TABS_CONFIG_KEY);
+    const domains = data[RECENT_TABS_CONFIG_KEY];
+    if (domains && Array.isArray(domains)) {
+      _trackedDomains = domains;
+      return domains;
+    }
+  } catch (err) {
+    console.error('[coretab] Failed to read filter config:', err);
+  }
+  _trackedDomains = [...DEFAULT_TRACKED_DOMAINS];
+  return _trackedDomains;
+}
+
+async function saveTrackedDomains(domains) {
+  _trackedDomains = domains;
+  await chrome.storage.local.set({ [RECENT_TABS_CONFIG_KEY]: domains });
+}

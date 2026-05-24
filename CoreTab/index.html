@@ -343,7 +343,15 @@
   </div>
 </div>
 
-<!-- Main app logic -->
-<script src="app.js"></script>
+<!-- Main app logic: split by responsibility, loaded as classic scripts to preserve current behavior -->
+<script src="js/coretab-config.js"></script>
+<script src="js/coretab-events.js"></script>
+<script src="js/coretab-actions.js"></script>
+<script src="js/coretab-data.js"></script>
+<script src="js/coretab-utils.js"></script>
+<script src="js/coretab-render-tabs.js"></script>
+<script src="js/coretab-recent.js"></script>
+<script src="js/coretab-ui.js"></script>
+<script src="js/coretab-main.js"></script>
 </body>
 </html>
