@@ -7,7 +7,8 @@ const SYSTEM_URL_PREFIXES = [
 
 // Recent Tabs
 const RECENT_TABS_KEY = 'coretab_recent_tabs';
-const RECENT_TRACKED_DOMAINS = [
+const RECENT_TABS_CONFIG_KEY = 'coretab_recent_config';
+const DEFAULT_TRACKED_DOMAINS = [
   'feishu.cn',
   'larksuite.com',
   'notion.so',
@@ -19,6 +20,7 @@ const RECENT_TRACKED_DOMAINS = [
 ];
 const RECENT_MAX_PER_DOMAIN = 50;
 const RECENT_MAX_TOTAL = 200;
+let trackedDomainsCache = null;
 
 // 例外：这些chrome://页面应该显示在opentabs下面
 const ALLOWED_CHROME_PAGES = [
@@ -53,18 +55,38 @@ function extractHostname(url) {
   }
 }
 
-function shouldTrackUrl(url) {
+async function getTrackedDomains() {
+  if (trackedDomainsCache) return trackedDomainsCache;
+  try {
+    const result = await chrome.storage.local.get(RECENT_TABS_CONFIG_KEY);
+    const configured = result[RECENT_TABS_CONFIG_KEY];
+    trackedDomainsCache = Array.isArray(configured) && configured.length > 0
+      ? configured
+      : [...DEFAULT_TRACKED_DOMAINS];
+  } catch {
+    trackedDomainsCache = [...DEFAULT_TRACKED_DOMAINS];
+  }
+  return trackedDomainsCache;
+}
+
+function domainMatches(hostname, domain) {
+  if (!hostname || !domain) return false;
+  const normalized = domain.trim().toLowerCase();
+  if (!normalized) return false;
+  if (normalized.includes('*')) {
+    const wildcardDomain = normalized.replace(/^\*\./, '');
+    return hostname === wildcardDomain || hostname.endsWith('.' + wildcardDomain);
+  }
+  return hostname === normalized || hostname.endsWith('.' + normalized);
+}
+
+async function shouldTrackUrl(url) {
   if (!url) return false;
   try {
     const urlObj = new URL(url);
-    const hostname = urlObj.hostname;
-    return RECENT_TRACKED_DOMAINS.some(domain => {
-      if (domain.includes('*')) {
-        const wildcardDomain = domain.replace('*.', '');
-        return hostname === wildcardDomain || hostname.endsWith('.' + wildcardDomain);
-      }
-      return hostname === domain || hostname.endsWith('.' + domain);
-    });
+    const hostname = urlObj.hostname.toLowerCase();
+    const trackedDomains = await getTrackedDomains();
+    return trackedDomains.some(domain => domainMatches(hostname, domain));
   } catch {
     return false;
   }
@@ -87,7 +109,7 @@ async function saveRecentTabs(tabs) {
 }
 
 async function addRecentTab(url, title, visitedAt) {
-  if (!shouldTrackUrl(url)) return;
+  if (!(await shouldTrackUrl(url))) return;
 
   const hostname = extractHostname(url);
   const now = visitedAt || Date.now();
@@ -128,7 +150,8 @@ async function backfillRecentTabs() {
     backfilled = result[RECENT_BACKFILL_STATE_KEY] || [];
   } catch { backfilled = []; }
 
-  const newDomains = RECENT_TRACKED_DOMAINS.filter(d => !backfilled.includes(d));
+  const trackedDomains = await getTrackedDomains();
+  const newDomains = trackedDomains.filter(d => !backfilled.includes(d));
   if (newDomains.length === 0) return;
 
   const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
@@ -145,7 +168,8 @@ async function backfillRecentTabs() {
       const filtered = results.filter(item => {
         try {
           const u = new URL(item.url);
-          return u.hostname === domain || u.hostname.endsWith('.' + domain);
+          const hostname = u.hostname.toLowerCase();
+          return domainMatches(hostname, domain);
         } catch { return false; }
       });
 
@@ -220,6 +244,12 @@ chrome.runtime.onStartup.addListener(() => {
   backfillRecentTabs();
 });
 
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName !== 'local' || !changes[RECENT_TABS_CONFIG_KEY]) return;
+  trackedDomainsCache = null;
+  backfillRecentTabs();
+});
+
 chrome.tabs.onCreated.addListener(() => {
   updateBadge();
 });
@@ -233,7 +263,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     updateBadge();
     // 记录到 Recent Tabs
     if (changeInfo.status === 'complete' && tab.url && tab.title) {
-      addRecentTab(tab.url, tab.title);
+      void addRecentTab(tab.url, tab.title);
     }
   }
 });
