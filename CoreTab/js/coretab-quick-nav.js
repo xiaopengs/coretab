@@ -116,7 +116,7 @@ function quickNavCardTemplate(link, extraClass = '') {
   const domain = getQuickNavDomain(link.url);
   return `
     <div class="quick-nav-card ${extraClass}" data-action="open-quick-nav" data-url="${escapeHtml(link.url)}" title="${escapeHtml(link.url)}">
-      <img class="quick-nav-favicon" src="https://www.google.com/s2/favicons?domain=${escapeHtml(domain)}&sz=32" alt="" data-fallback loading="lazy" decoding="async">
+      <img class="quick-nav-favicon" src="${getFaviconSrc(domain)}" alt="" data-fallback loading="lazy" decoding="async">
       <div class="quick-nav-text">
         <div class="quick-nav-title">${escapeHtml(link.title || domain || link.url)}</div>
         <div class="quick-nav-url">${escapeHtml(domain || link.url)}</div>

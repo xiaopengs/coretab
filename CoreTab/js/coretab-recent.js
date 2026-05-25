@@ -152,7 +152,7 @@ function renderRecentTabs(groups) {
         <div class="recent-card">
           <div class="recent-card-header">
             <div class="recent-card-info">
-              <img class="recent-card-favicon" src="https://www.google.com/s2/favicons?domain=${escapeHtml(site.domain)}&sz=32" alt="" data-fallback loading="lazy" decoding="async">
+              <img class="recent-card-favicon" src="${getFaviconSrc(site.domain)}" alt="" data-fallback loading="lazy" decoding="async">
               <span class="recent-card-name">${escapeHtml(site.label)}</span>
               <span class="recent-card-badge">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">

@@ -325,6 +325,13 @@ header .date {
   font-size: 13px;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
 .settings-btn {
   width: 48px;
   height: 48px;
@@ -336,10 +343,10 @@ header .date {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
-              box-shadow 0.25s ease,
+  transition: box-shadow 0.25s ease,
               border-color 0.25s ease,
-              color 0.25s ease;
+              color 0.25s ease,
+              background 0.25s ease;
   flex-shrink: 0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
@@ -363,6 +370,11 @@ header .date {
 .settings-btn svg {
   width: 20px;
   height: 20px;
+}
+
+.github-link-btn:hover {
+  border-color: var(--clay-black);
+  color: var(--clay-black);
 }
 
 /* ============================================================
@@ -1886,7 +1898,7 @@ header { animation: fadeUp 0.5s ease both; }
     width: 100%;
   }
 
-  .settings-btn {
+  .header-actions {
     position: absolute;
     top: 0;
     right: 0;
@@ -1894,9 +1906,8 @@ header { animation: fadeUp 0.5s ease both; }
 
   header {
     position: relative;
-    padding-right: 60px;
+    padding-right: 116px;
   }
-}
 
   .domain-chip {
     max-width: 100%;
@@ -1913,7 +1924,7 @@ header { animation: fadeUp 0.5s ease both; }
     gap: 20px;
   }
 
-  .settings-btn {
+  .header-actions {
     align-self: flex-end;
   }
 

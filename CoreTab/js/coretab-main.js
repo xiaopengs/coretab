@@ -1,6 +1,7 @@
 /* CoreTab bootstrap: initialize page after all feature files are loaded. */
 // Initialization
 async function init() {
+  await initFaviconCache();
   initGreeting();
   initDateDisplay();
   initSearch();

@@ -20,21 +20,8 @@ const LANDING_PAGE_PATTERNS = [
 
 const GITHUB_API_URL = 'https://api.github.com/search/repositories?q=stars:>1000&sort=stars&order=desc&per_page=6';
 
-// ── Favicon Fallback ───────────────────────────────────
-// Default SVG globe icon shown when favicon fails to load
-const DEFAULT_FAVICON = 'data:image/svg+xml,' + encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="1.5">' +
-  '<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>'
-);
+// DEFAULT_FAVICON and capture-phase error handler are now in coretab-favicon-cache.js
 
-// Capture-phase error handler — catches all [data-fallback] img errors,
-// including dynamically-added images (error event doesn't bubble on <img>)
-document.addEventListener('error', (e) => {
-  const img = e.target;
-  if (img && img.matches && img.matches('[data-fallback]')) {
-    img.src = DEFAULT_FAVICON;
-  }
-}, true);
 const GITHUB_CACHE_KEY = 'coretab_github_trending';
 const GITHUB_CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 

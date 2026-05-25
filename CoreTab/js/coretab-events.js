@@ -217,7 +217,7 @@ document.addEventListener('click', async (e) => {
       entries,
       entry => `
         <div class="more-modal-item" data-action="open-more-item" data-url="${escapeHtml(entry.url)}">
-          <img src="https://www.google.com/s2/favicons?domain=${domain}&sz=32" alt="" loading="lazy" decoding="async">
+          <img src="${getFaviconSrc(domain)}" alt="" data-fallback loading="lazy" decoding="async">
           <span class="more-modal-item-title">${escapeHtml(smartTitle(entry.title, entry.url))}</span>
           <span class="more-modal-item-time">${timeAgo(entry.visitedAt)}</span>
         </div>
@@ -248,7 +248,7 @@ document.addEventListener('click', async (e) => {
       entries,
       entry => `
         <div class="more-modal-item" data-action="open-more-item" data-url="${escapeHtml(entry.url)}">
-          <img src="https://www.google.com/s2/favicons?domain=${domain}&sz=32" alt="" loading="lazy" decoding="async">
+          <img src="${getFaviconSrc(domain)}" alt="" data-fallback loading="lazy" decoding="async">
           <span class="more-modal-item-title">${escapeHtml(entry.title || entry.url)}</span>
           <span class="more-modal-item-time">${timeAgo(entry.closedAt)}</span>
         </div>
@@ -263,7 +263,7 @@ document.addEventListener('click', async (e) => {
       historyGroups,
       g => `
         <div class="more-modal-item" data-action="open-more-item" data-url="https://${escapeHtml(g.domain)}">
-          <img src="https://www.google.com/s2/favicons?domain=${escapeHtml(g.domain)}&sz=32" alt="" loading="lazy" decoding="async">
+          <img src="${getFaviconSrc(g.domain)}" alt="" data-fallback loading="lazy" decoding="async">
           <span class="more-modal-item-title">${escapeHtml(g.label)} (${g.visitCount} visits)</span>
           <span class="more-modal-item-time">${g.entries.length} pages</span>
         </div>

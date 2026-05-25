@@ -45,7 +45,7 @@ function renderOpenTabs(windowGroups) {
         <div class="mission-pages">
           ${g.tabs.map(t => `
             <div class="page-chip" data-action="focus-tab" data-tab-url="${escapeHtml(t.url)}" title="${escapeHtml(smartTitle(t.title, t.url))}">
-              <img class="chip-favicon" src="https://www.google.com/s2/favicons?domain=${escapeHtml(t.hostname)}&sz=16" alt="" data-fallback loading="lazy" decoding="async">
+              <img class="chip-favicon" src="${getFaviconSrc(t.hostname, 16)}" alt="" data-fallback loading="lazy" decoding="async">
               <span class="chip-text">${escapeHtml(smartTitle(t.title, t.url))}</span>
               <div class="chip-actions">
                 <button class="chip-action chip-close" data-action="close-tab" data-tab-url="${escapeHtml(t.url)}" aria-label="Close tab">
@@ -100,7 +100,7 @@ function renderOpenTabs(windowGroups) {
   container.innerHTML = visibleGroups.map(g => `
     <div class="history-card">
       <div class="history-top">
-        <img class="history-favicon" src="https://www.google.com/s2/favicons?domain=${escapeHtml(g.domain)}&sz=32" alt="" data-fallback loading="lazy" decoding="async">
+        <img class="history-favicon" src="${getFaviconSrc(g.domain)}" alt="" data-fallback loading="lazy" decoding="async">
         <span class="history-name">${g.label}</span>
         <span class="history-badge">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -176,7 +176,7 @@ function renderClosedTabs(groups) {
         <div class="closed-card">
           <div class="closed-card-header">
             <div class="closed-card-info">
-              <img class="closed-card-favicon" src="https://www.google.com/s2/favicons?domain=${escapeHtml(site.domain)}&sz=32" alt="" data-fallback loading="lazy" decoding="async">
+              <img class="closed-card-favicon" src="${getFaviconSrc(site.domain)}" alt="" data-fallback loading="lazy" decoding="async">
               <span class="closed-card-name">${escapeHtml(site.label)}</span>
               <span class="closed-card-badge">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">

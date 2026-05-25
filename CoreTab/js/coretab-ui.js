@@ -182,7 +182,7 @@ async function performSearch(query) {
         const action = isClosed ? 'reopen-tab' : 'focus-tab';
         return `
           <div class="search-result-item${isClosed ? ' closed' : ''}${isSaved ? ' saved' : ''}" data-action="${action}" data-tab-url="${escapeHtml(tab.url)}">
-            <img src="https://www.google.com/s2/favicons?domain=${escapeHtml(hostname)}&sz=32" alt="" data-fallback loading="lazy" decoding="async">
+            <img src="${getFaviconSrc(hostname)}" alt="" data-fallback loading="lazy" decoding="async">
             <div class="search-result-info">
               <div class="search-result-title">${escapeHtml(tab.title || tab.url)}</div>
               <div class="search-result-url">${escapeHtml(isClosed ? hostname : hostname)}</div>
