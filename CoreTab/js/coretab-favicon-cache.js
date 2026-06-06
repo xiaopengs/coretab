@@ -9,6 +9,9 @@
 const FAVICON_CACHE_KEY = 'coretab_favicon_cache_v1';
 const GOOGLE_FAVICON_BASE = 'https://www.google.com/s2/favicons';
 const FAVICON_SIZE = 32;
+// Hard cap on cached favicons to keep chrome.storage.local bounded.
+// base64 favicons are ~3-5KB each; 500 ≈ 1.5-2.5MB worst case.
+const MAX_FAVICON_CACHE_ENTRIES = 500;
 
 // ── Default fallback SVG ────────────────────────────────
 const DEFAULT_FAVICON = 'data:image/svg+xml,' + encodeURIComponent(
@@ -27,6 +30,9 @@ async function initFaviconCache() {
     const result = await chrome.storage.local.get(FAVICON_CACHE_KEY);
     const stored = result[FAVICON_CACHE_KEY] || {};
     _faviconCache = new Map(Object.entries(stored));
+    // Enforce the cap on load so a previously-grown cache is trimmed
+    // even before the next persist.
+    _enforceFaviconCap();
   } catch {
     _faviconCache = new Map();
   }
@@ -38,11 +44,27 @@ function _schedulePersist() {
   if (_persistTimer) clearTimeout(_persistTimer);
   _persistTimer = setTimeout(async () => {
     if (!_faviconCache) return;
+    _enforceFaviconCap();
     try {
       const obj = Object.fromEntries(_faviconCache);
       await chrome.storage.local.set({ [FAVICON_CACHE_KEY]: obj });
-    } catch { /* storage full or unavailable — tolerate */ }
+    } catch (err) {
+      // Don't swallow silently — quota exhaustion is actionable.
+      console.error('[coretab] favicon cache persist failed:', err);
+    }
   }, 2000);
+}
+
+// LRU trim: evict oldest-inserted entries until size ≤ cap. Map iteration
+// order is insertion order, so the first key is the least recently touched
+// (getFaviconSrc re-inserts on hit, keeping recent lookups at the tail).
+function _enforceFaviconCap() {
+  if (!_faviconCache) return;
+  while (_faviconCache.size > MAX_FAVICON_CACHE_ENTRIES) {
+    const oldest = _faviconCache.keys().next();
+    if (oldest.done) break;
+    _faviconCache.delete(oldest.value);
+  }
 }
 
 // ── Get favicon src synchronously ───────────────────────
@@ -51,7 +73,11 @@ function getFaviconSrc(domain, size) {
   if (!domain) return DEFAULT_FAVICON;
   const sz = size || FAVICON_SIZE;
   if (_faviconCache && _faviconCache.has(domain)) {
-    return _faviconCache.get(domain);
+    // Touch: re-insert to mark as most-recently-used for LRU.
+    const value = _faviconCache.get(domain);
+    _faviconCache.delete(domain);
+    _faviconCache.set(domain, value);
+    return value;
   }
   // First render still uses the remote URL so the UI appears immediately;
   // cacheFavicon() runs in the background and subsequent renders use local dataURL.

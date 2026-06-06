@@ -40,6 +40,9 @@ const ALLOWED_CHROME_PAGES = [
 const CLOSED_TABS_KEY = 'coretab_closed_tabs';
 const MAX_TABS_PER_DOMAIN = 20;
 const MAX_TABS_PER_DAY = 100;
+// Closed tabs older than this are pruned on every write and at startup.
+// Keeps localStorage / chrome.storage.local bounded over months of use.
+const MAX_CLOSED_TABS_AGE_DAYS = 60;
 
 // Quick Navigation
 const QUICK_NAV_KEY = 'coretab_quick_nav';
@@ -71,6 +74,9 @@ const DEFAULT_TRACKED_DOMAINS = [
 ];
 const RECENT_MAX_PER_DOMAIN = 50;
 const RECENT_MAX_TOTAL = 200;
+// Recent tabs older than this are pruned on every write and at startup.
+// Prevents stale entries from crowding out fresh ones after long-term use.
+const MAX_RECENT_TABS_AGE_DAYS = 30;
 
 // 当前跟踪域名列表（内存缓存，从 storage 或默认值加载）
 let _trackedDomains = null;

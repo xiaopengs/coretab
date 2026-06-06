@@ -6,6 +6,8 @@ async function init() {
   initDateDisplay();
   initSearch();
   await restoreClosedTabsFromStorage();
+  // Prune expired data first so the initial render never sees stale entries.
+  await Promise.all([pruneAndSaveClosedTabs(), pruneAndSaveRecentTabs()]);
   await renderDashboard();
 }
 

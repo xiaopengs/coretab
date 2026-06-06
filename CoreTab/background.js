@@ -20,6 +20,7 @@ const DEFAULT_TRACKED_DOMAINS = [
 ];
 const RECENT_MAX_PER_DOMAIN = 50;
 const RECENT_MAX_TOTAL = 200;
+const MAX_RECENT_TABS_AGE_DAYS = 30;
 let trackedDomainsCache = null;
 
 // 例外：这些chrome://页面应该显示在opentabs下面
@@ -105,7 +106,30 @@ async function getRecentTabs() {
 async function saveRecentTabs(tabs) {
   try {
     await chrome.storage.local.set({ [RECENT_TABS_KEY]: tabs });
-  } catch {}
+  } catch (err) {
+    console.error('[coretab-bg] saveRecentTabs: chrome.storage.local write failed', err);
+  }
+}
+
+// Pure: drop recent entries older than the retention window.
+function pruneRecentTabs(tabs) {
+  if (!Array.isArray(tabs)) return [];
+  const cutoff = Date.now() - MAX_RECENT_TABS_AGE_DAYS * 86400000;
+  return tabs.filter(t => t && typeof t.visitedAt === 'number' && t.visitedAt >= cutoff);
+}
+
+// Convenience: load → prune → save (no-op if nothing to prune).
+async function pruneAndSaveRecentTabs() {
+  try {
+    const tabs = await getRecentTabs();
+    const pruned = pruneRecentTabs(tabs);
+    if (pruned.length < tabs.length) {
+      await saveRecentTabs(pruned);
+      console.log(`[coretab-bg] Pruned ${tabs.length - pruned.length} expired recent-tab entries`);
+    }
+  } catch (err) {
+    console.error('[coretab-bg] pruneAndSaveRecentTabs failed:', err);
+  }
 }
 
 async function addRecentTab(url, title, visitedAt) {
@@ -134,6 +158,7 @@ async function addRecentTab(url, title, visitedAt) {
   }
 
   tabs.sort((a, b) => b.visitedAt - a.visitedAt);
+  tabs = pruneRecentTabs(tabs);
   tabs = tabs.slice(0, RECENT_MAX_TOTAL);
 
   await saveRecentTabs(tabs);
@@ -237,11 +262,13 @@ async function updateBadge() {
 chrome.runtime.onInstalled.addListener(() => {
   updateBadge();
   backfillRecentTabs();
+  pruneAndSaveRecentTabs();
 });
 
 chrome.runtime.onStartup.addListener(() => {
   updateBadge();
   backfillRecentTabs();
+  pruneAndSaveRecentTabs();
 });
 
 chrome.storage.onChanged.addListener((changes, areaName) => {

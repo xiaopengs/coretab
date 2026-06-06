@@ -37,7 +37,31 @@ async function getRecentTabs() {
 async function saveRecentTabs(tabs) {
   try {
     await chrome.storage.local.set({ [RECENT_TABS_KEY]: tabs });
-  } catch {}
+  } catch (err) {
+    console.error('[coretab] saveRecentTabs: chrome.storage.local write failed', err);
+  }
+}
+
+// Pure: drop recent entries older than the retention window. Returns
+// the filtered array. Safe to call on any input.
+function pruneRecentTabs(tabs) {
+  if (!Array.isArray(tabs)) return [];
+  const cutoff = Date.now() - MAX_RECENT_TABS_AGE_DAYS * 86400000;
+  return tabs.filter(t => t && typeof t.visitedAt === 'number' && t.visitedAt >= cutoff);
+}
+
+// Convenience: load → prune → save (no-op if nothing to prune).
+async function pruneAndSaveRecentTabs() {
+  try {
+    const tabs = await getRecentTabs();
+    const pruned = pruneRecentTabs(tabs);
+    if (pruned.length < tabs.length) {
+      await saveRecentTabs(pruned);
+      console.log(`[coretab] Pruned ${tabs.length - pruned.length} expired recent-tab entries`);
+    }
+  } catch (err) {
+    console.error('[coretab] pruneAndSaveRecentTabs failed:', err);
+  }
 }
 
 // Add or update a tab visit
@@ -71,7 +95,10 @@ async function addRecentTab(url, title, visitedAt) {
   // Sort by visitedAt (newest first)
   tabs.sort((a, b) => b.visitedAt - a.visitedAt);
 
-  // Limit total tabs
+  // Drop entries older than the retention window, then enforce the count cap.
+  // Pruning here means the on-disk set is bounded by both time and count
+  // even if pruneAndSaveRecentTabs() was never called at startup.
+  tabs = pruneRecentTabs(tabs);
   tabs = tabs.slice(0, RECENT_MAX_TOTAL);
 
   await saveRecentTabs(tabs);

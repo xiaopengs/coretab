@@ -169,9 +169,43 @@ async function restoreClosedTabsFromStorage() {
 function saveClosedTabs(data) {
   try {
     localStorage.setItem(CLOSED_TABS_KEY, JSON.stringify(data));
-    // 同时备份到 chrome.storage.local，防止清除浏览器数据时丢失
-    chrome.storage.local.set({ [CLOSED_TABS_KEY]: data }).catch(() => {});
-  } catch (_) {}
+    // Mirror to chrome.storage.local so data survives a localStorage clear.
+    // Log quota/IO failures instead of swallowing them silently.
+    chrome.storage.local.set({ [CLOSED_TABS_KEY]: data }).catch((err) => {
+      console.error('[coretab] saveClosedTabs: chrome.storage.local write failed', err);
+    });
+  } catch (err) {
+    console.error('[coretab] saveClosedTabs: localStorage write failed', err);
+  }
+}
+
+// Pure: mutate `closedTabs` in place, removing any dateKey older than the
+// retention window. Returns the number of date groups removed.
+function pruneClosedTabs(closedTabs) {
+  if (!closedTabs || typeof closedTabs !== 'object') return 0;
+  const cutoff = getDateKey(Date.now() - MAX_CLOSED_TABS_AGE_DAYS * 86400000);
+  let removed = 0;
+  for (const dateKey of Object.keys(closedTabs)) {
+    if (dateKey < cutoff) {
+      delete closedTabs[dateKey];
+      removed++;
+    }
+  }
+  return removed;
+}
+
+// Convenience: load → prune → save (no-op if nothing to prune).
+async function pruneAndSaveClosedTabs() {
+  try {
+    const closedTabs = getClosedTabs();
+    const removed = pruneClosedTabs(closedTabs);
+    if (removed > 0) {
+      saveClosedTabs(closedTabs);
+      console.log(`[coretab] Pruned ${removed} expired closed-tab date group(s)`);
+    }
+  } catch (err) {
+    console.error('[coretab] pruneAndSaveClosedTabs failed:', err);
+  }
 }
 
 function getDateKey(timestamp) {
@@ -185,6 +219,10 @@ function addClosedTab(url, title) {
   const dateKey = getDateKey(now);
 
   const closedTabs = getClosedTabs();
+
+  // Prune expired date groups on every write so storage stays bounded
+  // even when the user never reloads the new-tab page.
+  pruneClosedTabs(closedTabs);
 
   // Initialize date if not exists
   if (!closedTabs[dateKey]) {
