@@ -67,41 +67,62 @@ async function pruneAndSaveRecentTabs() {
 // Add or update a tab visit
 async function addRecentTab(url, title, visitedAt) {
   if (!(await shouldTrackUrl(url))) return;
+  return enqueueRecent(async () => {
+    const hostname = extractHostname(url);
+    const now = visitedAt || Date.now();
+    let tabs = await getRecentTabs();
 
-  const hostname = extractHostname(url);
-  const now = visitedAt || Date.now();
-  let tabs = await getRecentTabs();
-
-  // Check if tab already exists
-  const existingIndex = tabs.findIndex(t => t.url === url);
-  if (existingIndex !== -1) {
-    // Only update visitedAt if newer (for backfill merging)
-    if (now > tabs[existingIndex].visitedAt) {
-      tabs[existingIndex].visitedAt = now;
+    // Check if tab already exists
+    const existingIndex = tabs.findIndex(t => t.url === url);
+    if (existingIndex !== -1) {
+      // Only update visitedAt if newer (for backfill merging)
+      if (now > tabs[existingIndex].visitedAt) {
+        tabs[existingIndex].visitedAt = now;
+      }
+      // Cap visitCount so a long-lived page that the user keeps revisiting
+      // (e.g. docs) doesn't grow the field without bound. 999 is plenty
+      // for any human-scale usage and keeps the number readable in the UI.
+      tabs[existingIndex].visitCount = Math.min(
+        (tabs[existingIndex].visitCount || 1) + 1,
+        999
+      );
+      tabs[existingIndex].title = title || tabs[existingIndex].title;
+    } else {
+      // Add new tab
+      tabs.unshift({
+        url,
+        title: title || url,
+        hostname,
+        visitedAt: now,
+        visitCount: 1
+      });
     }
-    tabs[existingIndex].visitCount = (tabs[existingIndex].visitCount || 1) + 1;
-    tabs[existingIndex].title = title || tabs[existingIndex].title;
-  } else {
-    // Add new tab
-    tabs.unshift({
-      url,
-      title: title || url,
-      hostname,
-      visitedAt: now,
-      visitCount: 1
-    });
-  }
 
-  // Sort by visitedAt (newest first)
-  tabs.sort((a, b) => b.visitedAt - a.visitedAt);
+    // Sort by visitedAt (newest first)
+    tabs.sort((a, b) => b.visitedAt - a.visitedAt);
 
-  // Drop entries older than the retention window, then enforce the count cap.
-  // Pruning here means the on-disk set is bounded by both time and count
-  // even if pruneAndSaveRecentTabs() was never called at startup.
-  tabs = pruneRecentTabs(tabs);
-  tabs = tabs.slice(0, RECENT_MAX_TOTAL);
+    // Drop entries older than the retention window, then enforce the count cap.
+    // Pruning here means the on-disk set is bounded by both time and count
+    // even if pruneAndSaveRecentTabs() was never called at startup.
+    tabs = pruneRecentTabs(tabs);
+    tabs = tabs.slice(0, RECENT_MAX_TOTAL);
 
-  await saveRecentTabs(tabs);
+    await saveRecentTabs(tabs);
+  });
+}
+
+// Serial queue: chrome.storage.local read-modify-write is not atomic across
+// concurrent addRecentTab() calls (each call from onUpdated runs as a
+// separate microtask). Without this, two concurrent adds for the same URL
+// can both read visitCount=N, both write N+1, and the second increment is
+// lost. The queue also keeps tabs in a single coherent order under bursty
+// load (e.g. opening many tracked tabs at once).
+let _recentQueue = Promise.resolve();
+function enqueueRecent(fn) {
+  const next = _recentQueue.then(fn, fn);
+  // Never let a rejection poison the chain for subsequent callers.
+  _recentQueue = next.catch(() => {});
+  return next;
 }
 
 // Group recent tabs by domain

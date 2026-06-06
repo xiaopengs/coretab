@@ -153,17 +153,59 @@ function getClosedTabs() {
   }
 }
 
-// 启动时从 chrome.storage.local 恢复数据（防止 localStorage 被清理）
+// 启动时合并两边存储的数据。chrome.storage.local 是 source of truth
+// (MV3 友好,配额大),localStorage 作为热缓存。两侧可能因为用户清理
+// 浏览器数据而短暂不一致 — 取较新的那份,并写回两边。
 async function restoreClosedTabsFromStorage() {
   try {
-    const existing = getClosedTabs();
-    if (Object.keys(existing).length > 0) return; // 已有数据，不需要恢复
+    const localRaw = (() => {
+      try { return localStorage.getItem(CLOSED_TABS_KEY); }
+      catch { return null; }
+    })();
+    const localData = localRaw ? safeParseJson(localRaw) : null;
     const result = await chrome.storage.local.get(CLOSED_TABS_KEY);
-    if (result[CLOSED_TABS_KEY] && Object.keys(result[CLOSED_TABS_KEY]).length > 0) {
-      localStorage.setItem(CLOSED_TABS_KEY, JSON.stringify(result[CLOSED_TABS_KEY]));
-      console.log('[coretab] Restored closed tabs from chrome.storage.local');
+    const remoteData = result[CLOSED_TABS_KEY] || null;
+
+    // Pick the larger set as the merged source — whichever side has more
+    // entries has seen more activity and is closer to ground truth.
+    const localSize = localData ? countClosedTabsEntries(localData) : 0;
+    const remoteSize = remoteData ? countClosedTabsEntries(remoteData) : 0;
+    const merged = localSize >= remoteSize ? (localData || remoteData) : remoteData;
+    if (!merged) return;
+
+    // If the local copy is empty but remote has data (e.g. localStorage was
+    // cleared by the user), restore it. If they diverge, prefer the merged
+    // set and write it back to both stores.
+    if (localSize < remoteSize) {
+      try { localStorage.setItem(CLOSED_TABS_KEY, JSON.stringify(merged)); } catch {}
+      console.log(`[coretab] Restored ${remoteSize} closed-tab entries from chrome.storage.local`);
+    } else if (remoteSize < localSize) {
+      chrome.storage.local.set({ [CLOSED_TABS_KEY]: merged }).catch((err) => {
+        console.error('[coretab] restoreClosedTabsFromStorage: write to chrome.storage.local failed', err);
+      });
+      console.log(`[coretab] Pushed ${localSize} closed-tab entries to chrome.storage.local`);
     }
-  } catch (_) {}
+  } catch (err) {
+    console.error('[coretab] restoreClosedTabsFromStorage failed:', err);
+  }
+}
+
+function safeParseJson(raw) {
+  try { return JSON.parse(raw); } catch { return null; }
+}
+
+function countClosedTabsEntries(data) {
+  if (!data || typeof data !== 'object') return 0;
+  let n = 0;
+  for (const dateKey of Object.keys(data)) {
+    const hosts = data[dateKey];
+    if (!hosts || typeof hosts !== 'object') continue;
+    for (const host of Object.keys(hosts)) {
+      const arr = hosts[host];
+      if (Array.isArray(arr)) n += arr.length;
+    }
+  }
+  return n;
 }
 
 function saveClosedTabs(data) {
@@ -210,6 +252,9 @@ async function pruneAndSaveClosedTabs() {
 
 function getDateKey(timestamp) {
   const d = new Date(timestamp);
+  // Use local-date components (timezone-naive) so the key matches the user's
+  // wall-clock day, not UTC. This is the source of truth for grouping
+  // closed/recent entries by day across the rest of the codebase.
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
@@ -230,6 +275,20 @@ function addClosedTab(url, title) {
   }
   if (!closedTabs[dateKey][hostname]) {
     closedTabs[dateKey][hostname] = [];
+  }
+
+  // Dedup: if the same (date, host, url) already exists, just refresh its
+  // closedAt and move it to the head. Avoids storing N copies of the same URL
+  // when a user reopens/recloses the same tab repeatedly.
+  const existing = closedTabs[dateKey][hostname];
+  const dupIdx = existing.findIndex(e => e.url === url);
+  if (dupIdx >= 0) {
+    const [entry] = existing.splice(dupIdx, 1);
+    entry.closedAt = now;
+    entry.title = title || entry.title;
+    existing.unshift(entry);
+    saveClosedTabs(closedTabs);
+    return;
   }
 
   // Add new closed tab at the beginning

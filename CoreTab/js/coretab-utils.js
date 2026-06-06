@@ -134,10 +134,12 @@ function formatClosedDateLabel(dateKey) {
   if (!y || !m || !d) return dateKey;
   const date = new Date(y, m - 1, d);
   const now = new Date();
-  const startOf = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
-  const todayStart = startOf(now);
-  const thatStart = startOf(date);
-  const diffDays = Math.round((todayStart - thatStart) / 86400000);
+  // Use UTC for the day diff so DST transitions (where a local day is 23
+  // or 25 hours) don't shift the result by 1. The local-date keys still
+  // represent local days; we just want the integer count between them.
+  const todayUTC = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  const thatUTC = Date.UTC(y, m - 1, d);
+  const diffDays = Math.round((todayUTC - thatUTC) / 86400000);
   const sameYear = date.getFullYear() === now.getFullYear();
   const monthShort = date.toLocaleDateString('en-US', { month: 'short' });
   if (diffDays === 0) return 'Today';

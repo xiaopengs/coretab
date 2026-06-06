@@ -134,34 +134,50 @@ async function pruneAndSaveRecentTabs() {
 
 async function addRecentTab(url, title, visitedAt) {
   if (!(await shouldTrackUrl(url))) return;
+  return enqueueRecent(async () => {
+    const hostname = extractHostname(url);
+    const now = visitedAt || Date.now();
+    let tabs = await getRecentTabs();
 
-  const hostname = extractHostname(url);
-  const now = visitedAt || Date.now();
-  let tabs = await getRecentTabs();
-
-  const existingIndex = tabs.findIndex(t => t.url === url);
-  if (existingIndex !== -1) {
-    // Only update visitedAt if newer (for backfill merging)
-    if (now > tabs[existingIndex].visitedAt) {
-      tabs[existingIndex].visitedAt = now;
+    const existingIndex = tabs.findIndex(t => t.url === url);
+    if (existingIndex !== -1) {
+      // Only update visitedAt if newer (for backfill merging)
+      if (now > tabs[existingIndex].visitedAt) {
+        tabs[existingIndex].visitedAt = now;
+      }
+      // Cap visitCount so a long-lived page that the user keeps revisiting
+      // (e.g. docs) doesn't grow the field without bound.
+      tabs[existingIndex].visitCount = Math.min(
+        (tabs[existingIndex].visitCount || 1) + 1,
+        999
+      );
+      tabs[existingIndex].title = title || tabs[existingIndex].title;
+    } else {
+      tabs.unshift({
+        url,
+        title: title || url,
+        hostname,
+        visitedAt: now,
+        visitCount: 1
+      });
     }
-    tabs[existingIndex].visitCount = (tabs[existingIndex].visitCount || 1) + 1;
-    tabs[existingIndex].title = title || tabs[existingIndex].title;
-  } else {
-    tabs.unshift({
-      url,
-      title: title || url,
-      hostname,
-      visitedAt: now,
-      visitCount: 1
-    });
-  }
 
-  tabs.sort((a, b) => b.visitedAt - a.visitedAt);
-  tabs = pruneRecentTabs(tabs);
-  tabs = tabs.slice(0, RECENT_MAX_TOTAL);
+    tabs.sort((a, b) => b.visitedAt - a.visitedAt);
+    tabs = pruneRecentTabs(tabs);
+    tabs = tabs.slice(0, RECENT_MAX_TOTAL);
 
-  await saveRecentTabs(tabs);
+    await saveRecentTabs(tabs);
+  });
+}
+
+// Serial queue for chrome.storage.local read-modify-write on Recent Tabs.
+// See coretab-recent.js for the rationale; mirrored here because the SW
+// has its own module scope and cannot import from page-side scripts.
+let _recentQueue = Promise.resolve();
+function enqueueRecent(fn) {
+  const next = _recentQueue.then(fn, fn);
+  _recentQueue = next.catch(() => {});
+  return next;
 }
 
 // History backfill: import existing browser history for tracked domains
