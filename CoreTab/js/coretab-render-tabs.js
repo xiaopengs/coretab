@@ -146,6 +146,13 @@ async function loadClosedTabs() {
   }
 }
 
+// In-page Closed Tabs: cap visible rows at 12 so the section doesn't
+// dominate the dashboard, then surface a "Show all" button that opens
+// the full day-grouped list in a modal. The cap is by total entry
+// count, not by group count, so a single heavy day (e.g. a long
+// browsing session) still gets a clean cutoff at row 12.
+const CLOSED_TRUNCATE_LIMIT = 12;
+
 function renderClosedTabs(groups) {
   const container = document.getElementById('closedTabsContainer');
   const empty = document.getElementById('closedEmpty');
@@ -153,7 +160,6 @@ function renderClosedTabs(groups) {
 
   if (!container) return;
 
-  // groups: [{dateKey, label, entries: [...]}], already sorted desc by date
   const totalClosed = groups.reduce((s, g) => s + g.entries.length, 0);
 
   if (totalClosed === 0) {
@@ -166,37 +172,115 @@ function renderClosedTabs(groups) {
   empty.style.display = 'none';
   if (countEl) countEl.textContent = `${totalClosed} closed`;
 
+  // Truncate by total entry count, preserving the day-grouped shape
+  // (a day is only included if it has at least one visible row).
+  const visibleGroups = [];
+  let shown = 0;
+  for (const group of groups) {
+    if (shown >= CLOSED_TRUNCATE_LIMIT) break;
+    const remaining = CLOSED_TRUNCATE_LIMIT - shown;
+    if (group.entries.length <= remaining) {
+      visibleGroups.push(group);
+      shown += group.entries.length;
+    } else {
+      visibleGroups.push({ ...group, entries: group.entries.slice(0, remaining) });
+      shown = CLOSED_TRUNCATE_LIMIT;
+    }
+  }
+
+  const hasMore = totalClosed > CLOSED_TRUNCATE_LIMIT;
+  const hiddenCount = totalClosed - shown;
+
   container.innerHTML = `
     <div class="closed-day-list">
-      ${groups.map(group => `
-        <section class="closed-day-group">
-          <header class="closed-day-head">
-            <span class="closed-day-label">${escapeHtml(group.label)}</span>
-            <span class="closed-day-count">${group.entries.length}</span>
-          </header>
-          <ul class="closed-day-rows" role="list">
-            ${group.entries.map(entry => {
-              const host = entry.hostname || '';
-              const hostLabel = friendlyDomain(host) || host;
-              return `
-                <li class="closed-row" data-action="reopen-tab" data-tab-url="${escapeHtml(entry.url)}" title="${escapeHtml(entry.title || entry.url)}">
-                  <img class="closed-row-favicon" src="${getFaviconSrc(host, 16)}" alt="" data-fallback loading="lazy" decoding="async">
-                  <span class="closed-row-text">
-                    <span class="closed-row-title">${escapeHtml(entry.title || entry.url)}</span>
-                    <span class="closed-row-host">${escapeHtml(hostLabel)}</span>
-                  </span>
-                  <span class="closed-row-time">${timeAgo(entry.closedAt)}</span>
-                  <span class="closed-row-reopen" aria-hidden="true">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                    </svg>
-                  </span>
-                </li>
-              `;
-            }).join('')}
-          </ul>
-        </section>
-      `).join('')}
+      ${visibleGroups.map(buildClosedDayGroupHtml).join('')}
     </div>
+    ${hasMore ? `
+      <button class="page-more-btn" data-action="show-all-closed" style="width:100%;margin-top:12px;">
+        Show all ${totalClosed} closed tabs
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0 6 6m6.5-1.5v-4.5m0 4.5h-4.5m4.5 0-6-6M3.75 19.5v-4.5m0 4.5h4.5m-4.5 0 6-6m6.5 1.5v4.5m0-4.5h-4.5m4.5 0-6 6"/>
+        </svg>
+      </button>
+    ` : ''}
   `;
+}
+
+// Render a single day group: header (serif label + uppercase count) +
+// a <ul> of .closed-row items. Used both by the in-page truncated
+// list and by the "All Closed Tabs" full-list modal, so the day-
+// grouped layout is identical in both contexts.
+function buildClosedDayGroupHtml(group) {
+  return `
+    <section class="closed-day-group">
+      <header class="closed-day-head">
+        <span class="closed-day-label">${escapeHtml(group.label)}</span>
+        <span class="closed-day-count">${group.entries.length}</span>
+      </header>
+      <ul class="closed-day-rows" role="list">
+        ${group.entries.map(entry => {
+          const host = entry.hostname || '';
+          const hostLabel = friendlyDomain(host) || host;
+          return `
+            <li class="closed-row" data-action="reopen-tab" data-tab-url="${escapeHtml(entry.url)}" title="${escapeHtml(entry.title || entry.url)}">
+              <img class="closed-row-favicon" src="${getFaviconSrc(host, 16)}" alt="" data-fallback loading="lazy" decoding="async">
+              <span class="closed-row-text">
+                <span class="closed-row-title">${escapeHtml(entry.title || entry.url)}</span>
+                <span class="closed-row-host">${escapeHtml(hostLabel)}</span>
+              </span>
+              <span class="closed-row-time">${timeAgo(entry.closedAt)}</span>
+              <span class="closed-row-reopen" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                </svg>
+              </span>
+            </li>
+          `;
+        }).join('')}
+      </ul>
+    </section>
+  `;
+}
+
+// Open the full-list modal. Re-fetches from storage so the modal
+// always reflects current state, not whatever was last rendered in
+// the truncated in-page list.
+function openClosedAllModal() {
+  const overlay = document.getElementById('closedAllOverlay');
+  const body = document.getElementById('closedAllBody');
+  const count = document.getElementById('closedAllTotalCount');
+  if (!overlay || !body) return;
+
+  let groups = [];
+  try {
+    groups = getClosedTabsGrouped() || [];
+  } catch (err) {
+    console.error('[coretab] openClosedAllModal: failed to read closed tabs', err);
+  }
+  const total = groups.reduce((s, g) => s + g.entries.length, 0);
+  if (count) count.textContent = `${total} closed`;
+
+  body.innerHTML = total === 0
+    ? '<div class="closed-empty-state">No closed tabs</div>'
+    : `<div class="closed-day-list">${groups.map(buildClosedDayGroupHtml).join('')}</div>`;
+
+  overlay.style.display = 'flex';
+  // Force a reflow so the visibility transition picks up the initial
+  // opacity: 0 state.
+  void overlay.offsetWidth;
+  overlay.classList.add('visible');
+}
+
+function closeClosedAllModal() {
+  const overlay = document.getElementById('closedAllOverlay');
+  if (!overlay) return;
+  if (!overlay.classList.contains('visible')) return;
+  overlay.classList.remove('visible');
+  // Match the 0.25s opacity transition before hiding display so the
+  // fade-out actually animates.
+  setTimeout(() => {
+    if (!overlay.classList.contains('visible')) {
+      overlay.style.display = 'none';
+    }
+  }, 250);
 }

@@ -8,6 +8,8 @@ function getActiveDialog() {
   if (moreOverlay && moreOverlay.classList.contains('visible')) return 'more';
   const filterOverlay = document.getElementById('recentFilterOverlay');
   if (filterOverlay && filterOverlay.classList.contains('visible')) return 'filter';
+  const closedAllOverlay = document.getElementById('closedAllOverlay');
+  if (closedAllOverlay && closedAllOverlay.classList.contains('visible')) return 'closed-all';
   return 'confirm';
 }
 
@@ -17,6 +19,7 @@ document.addEventListener('keydown', (e) => {
     if (active === 'more') { closeMoreModal(); return; }
     if (active === 'filter') { closeRecentFilterModal(); return; }
     if (active === 'quick-nav') { closeQuickNavModal(); return; }
+    if (active === 'closed-all') { closeClosedAllModal(); return; }
     hideConfirmDialog();
   }
   // Enter key in filter input
@@ -42,6 +45,8 @@ document.addEventListener('click', async (e) => {
     closeRecentFilterModal();
   } else if (overlay && overlay.id === 'quickNavOverlay') {
     closeQuickNavModal();
+  } else if (overlay && overlay.id === 'closedAllOverlay') {
+    closeClosedAllModal();
   }
 
   // 2. data-action delegation.
@@ -244,6 +249,16 @@ document.addEventListener('click', async (e) => {
       chrome.tabs.create({ url, active: true });
       closeMoreModal();
     }
+    return;
+  }
+
+  // ---- Closed Tabs: show all / close modal ----
+  if (action === 'show-all-closed') {
+    openClosedAllModal();
+    return;
+  }
+  if (action === 'close-closed-all-modal') {
+    closeClosedAllModal();
     return;
   }
 

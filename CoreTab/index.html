@@ -106,27 +106,24 @@
        CURRENT TABS — Domain grouped cards (mission-card style)
        ================================================================ -->
   <div class="active-section" id="openTabsSection">
-    <!-- Hero action banner — prominent "close all tabs" CTA at the top of the section -->
-    <div class="open-tabs-hero" id="openTabsHero" data-state="filled" aria-label="Close all open tabs">
-      <div class="open-tabs-hero-icon" aria-hidden="true">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-        </svg>
+    <!-- Quick Action bar — flat, single-line action strip. Close All is the first
+         action. Add more actions by appending buttons to .quick-action-items. -->
+    <section class="quick-action-bar" aria-label="Quick actions">
+      <div class="quick-action-label">
+        <span class="qa-label-text">Quick Action</span>
       </div>
-      <div class="open-tabs-hero-text">
-        <div class="open-tabs-hero-title" id="openTabsHeroTitle">X 个标签页待清理</div>
-        <div class="open-tabs-hero-sub" id="openTabsHeroSub">一键释放浏览器内存，让焦点回到当下</div>
+      <div class="quick-action-items">
+        <button class="quick-action-btn qa-btn-destructive" data-action="close-all-open-tabs">
+          <span class="qa-icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
+            </svg>
+          </span>
+          <span class="qa-btn-text">Close all tabs</span>
+          <span class="qa-btn-count" id="qaCloseAllCount">0</span>
+        </button>
       </div>
-      <button class="open-tabs-hero-cta" data-action="close-all-open-tabs" id="openTabsHeroCta">
-        <span class="cta-label">Close all</span>
-        <span class="cta-count" id="openTabsHeroCount">0</span>
-        <span class="cta-arrow" aria-hidden="true">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-          </svg>
-        </span>
-      </button>
-    </div>
+    </section>
 
     <div class="section-header">
       <h2>Open Tabs</h2>
@@ -354,6 +351,27 @@
       </button>
     </div>
     <div class="more-modal-body" id="moreModalBody"></div>
+  </div>
+</div>
+
+<!-- All Closed Tabs — full list in a near-fullscreen modal. Reuses
+     .closed-day-* row styles so the day-grouped layout is identical
+     to the in-page list. Triggered by Closed Tabs "Show all" button. -->
+<div class="closed-all-modal-overlay" id="closedAllOverlay" style="display:none">
+  <div class="closed-all-modal" role="dialog" aria-modal="true" aria-label="All closed tabs">
+    <header class="closed-all-modal-head">
+      <div class="closed-all-modal-title">
+        <h2>Closed Tabs</h2>
+        <span class="closed-all-modal-count" id="closedAllTotalCount">0 closed</span>
+      </div>
+      <button class="closed-all-modal-close" data-action="close-closed-all-modal" aria-label="Close">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </header>
+    <div class="closed-all-modal-body" id="closedAllBody"></div>
   </div>
 </div>
 
