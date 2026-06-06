@@ -153,12 +153,8 @@ function renderClosedTabs(groups) {
 
   if (!container) return;
 
-  // 合并后 groups[0].domains 包含所有域名
-  const domains = groups[0]?.domains || [];
-  let totalClosed = 0;
-  for (const site of domains) {
-    totalClosed += site.entries.length;
-  }
+  // groups: [{dateKey, label, entries: [...]}], already sorted desc by date
+  const totalClosed = groups.reduce((s, g) => s + g.entries.length, 0);
 
   if (totalClosed === 0) {
     container.innerHTML = '';
@@ -168,46 +164,38 @@ function renderClosedTabs(groups) {
   }
 
   empty.style.display = 'none';
-  if (countEl) countEl.textContent = totalClosed + ' closed tabs';
+  if (countEl) countEl.textContent = `${totalClosed} closed`;
 
   container.innerHTML = `
-    <div class="closed-sites">
-      ${domains.map(site => `
-        <div class="closed-card">
-          <div class="closed-card-header">
-            <div class="closed-card-info">
-              <img class="closed-card-favicon" src="${getFaviconSrc(site.domain)}" alt="" data-fallback loading="lazy" decoding="async">
-              <span class="closed-card-name">${escapeHtml(site.label)}</span>
-              <span class="closed-card-badge">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z" />
-                </svg>
-                ${site.entries.length} closed
-              </span>
-            </div>
-            <button class="closed-open-all" data-action="open-all-closed" data-domain="${escapeHtml(site.domain)}" title="Open all">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-              </svg>
-            </button>
-          </div>
-          <div class="closed-pages">
-            ${site.entries.slice(0, 5).map(entry => `
-              <div class="closed-page-item" data-action="reopen-tab" data-tab-url="${escapeHtml(entry.url)}">
-                <span class="closed-page-title">${escapeHtml(entry.title || entry.url)}</span>
-                <span class="closed-page-time">${timeAgo(entry.closedAt)}</span>
-              </div>
-            `).join('')}
-            ${site.entries.length > 5 ? `
-              <button class="page-more-btn" data-action="more-closed" data-domain="${escapeHtml(site.domain)}" data-label="${escapeHtml(site.label)}">
-                +${site.entries.length - 5} more
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="m19 9-7 7-7-7"/>
-                </svg>
-              </button>
-            ` : ''}
-          </div>
-        </div>
+    <div class="closed-day-list">
+      ${groups.map(group => `
+        <section class="closed-day-group">
+          <header class="closed-day-head">
+            <span class="closed-day-label">${escapeHtml(group.label)}</span>
+            <span class="closed-day-count">${group.entries.length}</span>
+          </header>
+          <ul class="closed-day-rows" role="list">
+            ${group.entries.map(entry => {
+              const host = entry.hostname || '';
+              const hostLabel = friendlyDomain(host) || host;
+              return `
+                <li class="closed-row" data-action="reopen-tab" data-tab-url="${escapeHtml(entry.url)}" title="${escapeHtml(entry.title || entry.url)}">
+                  <img class="closed-row-favicon" src="${getFaviconSrc(host, 16)}" alt="" data-fallback loading="lazy" decoding="async">
+                  <span class="closed-row-text">
+                    <span class="closed-row-title">${escapeHtml(entry.title || entry.url)}</span>
+                    <span class="closed-row-host">${escapeHtml(hostLabel)}</span>
+                  </span>
+                  <span class="closed-row-time">${timeAgo(entry.closedAt)}</span>
+                  <span class="closed-row-reopen" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
+                    </svg>
+                  </span>
+                </li>
+              `;
+            }).join('')}
+          </ul>
+        </section>
       `).join('')}
     </div>
   `;

@@ -226,37 +226,6 @@ document.addEventListener('click', async (e) => {
     return;
   }
 
-  if (action === 'more-closed') {
-    const domain = actionEl.dataset.domain;
-    const label = actionEl.dataset.label;
-    const closedTabs = getClosedTabs();
-    const seenUrls = new Set();
-    const entries = [];
-    for (const dateKey in closedTabs) {
-      if (closedTabs[dateKey][domain]) {
-        for (const entry of closedTabs[dateKey][domain]) {
-          if (!seenUrls.has(entry.url)) {
-            seenUrls.add(entry.url);
-            entries.push(entry);
-          }
-        }
-      }
-    }
-    entries.sort((a, b) => b.closedAt - a.closedAt);
-    openMoreModal(
-      `${label} — ${entries.length} closed`,
-      entries,
-      entry => `
-        <div class="more-modal-item" data-action="open-more-item" data-url="${escapeHtml(entry.url)}">
-          <img src="${getFaviconSrc(domain)}" alt="" data-fallback loading="lazy" decoding="async">
-          <span class="more-modal-item-title">${escapeHtml(entry.title || entry.url)}</span>
-          <span class="more-modal-item-time">${timeAgo(entry.closedAt)}</span>
-        </div>
-      `
-    );
-    return;
-  }
-
   if (action === 'more-history') {
     openMoreModal(
       `All Sites — ${historyGroups.length} sites`,

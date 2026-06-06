@@ -261,50 +261,42 @@ function removeClosedTabsForDomain(hostname) {
 function getClosedTabsGrouped() {
   const closedTabs = getClosedTabs();
 
-  // 按网站合并：同一域名跨所有日期合并
-  const domainMap = {};
+  // 按日期 → 扁平条目（每条带 hostname 便于渲染 favicon/标题）
+  const dayMap = {};
+  const seenByDay = {};
 
   for (const dateKey of Object.keys(closedTabs)) {
+    dayMap[dateKey] = [];
+    seenByDay[dateKey] = new Set();
     for (const hostname in closedTabs[dateKey]) {
       const entries = closedTabs[dateKey][hostname];
       if (!entries || entries.length === 0) continue;
-
-      if (!domainMap[hostname]) {
-        domainMap[hostname] = [];
-      }
-
       for (const entry of entries) {
-        domainMap[hostname].push({
+        // 同一天内同一 url 去重
+        const dedupeKey = `${dateKey}::${entry.url}`;
+        if (seenByDay[dateKey].has(dedupeKey)) continue;
+        seenByDay[dateKey].add(dedupeKey);
+        dayMap[dateKey].push({
           ...entry,
-          closedAt: entry.closedAt
+          hostname,
+          dateKey
         });
       }
     }
+    // 当天内按 closedAt desc
+    dayMap[dateKey].sort((a, b) => b.closedAt - a.closedAt);
   }
 
-  // 每个域名内部：去重 + 排序
-  const domains = Object.keys(domainMap).map(hostname => {
-    const seenUrls = new Set();
-    const unique = domainMap[hostname].filter(e => {
-      if (seenUrls.has(e.url)) return false;
-      seenUrls.add(e.url);
-      return true;
-    });
-    unique.sort((a, b) => b.closedAt - a.closedAt);
-    return {
-      domain: hostname,
-      label: friendlyDomain(hostname),
-      entries: unique
-    };
-  });
+  // 排序日期（最新在前）
+  const sortedDateKeys = Object.keys(dayMap).sort((a, b) => (a < b ? 1 : a > b ? -1 : 0));
 
-  // 按最新关闭时间排序域名
-  domains.sort((a, b) => {
-    const aTime = a.entries[0]?.closedAt || 0;
-    const bTime = b.entries[0]?.closedAt || 0;
-    return bTime - aTime;
-  });
-
-  // 保持与旧接口兼容：返回数组，第一个元素包含所有域名
-  return [{ date: 'all', label: 'All Closed', domains }];
+  return sortedDateKeys
+    .filter(k => dayMap[k].length > 0)
+    .map(dateKey => ({
+      dateKey,
+      label: typeof formatClosedDateLabel === 'function'
+        ? formatClosedDateLabel(dateKey)
+        : dateKey,
+      entries: dayMap[dateKey]
+    }));
 }

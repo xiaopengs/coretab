@@ -126,6 +126,31 @@ function timeAgo(timestamp) {
   return `${days}d ago`;
 }
 
+// Human-friendly label for a closed-tabs day group.
+// Today / Yesterday / weekday name (within ~6 days) / "Mon, Mar 5" / "Mon, Mar 5, 2024"
+function formatClosedDateLabel(dateKey) {
+  if (!dateKey) return '';
+  const [y, m, d] = dateKey.split('-').map(Number);
+  if (!y || !m || !d) return dateKey;
+  const date = new Date(y, m - 1, d);
+  const now = new Date();
+  const startOf = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const todayStart = startOf(now);
+  const thatStart = startOf(date);
+  const diffDays = Math.round((todayStart - thatStart) / 86400000);
+  const sameYear = date.getFullYear() === now.getFullYear();
+  const monthShort = date.toLocaleDateString('en-US', { month: 'short' });
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays > 1 && diffDays < 7) {
+    return date.toLocaleDateString('en-US', { weekday: 'long' });
+  }
+  if (sameYear) {
+    return `${date.toLocaleDateString('en-US', { weekday: 'short' })}, ${monthShort} ${d}`;
+  }
+  return `${date.toLocaleDateString('en-US', { weekday: 'short' })}, ${monthShort} ${d}, ${y}`;
+}
+
 function formatNumber(num) {
   if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
   return String(num);
