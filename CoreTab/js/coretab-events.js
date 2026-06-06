@@ -28,26 +28,23 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-// Click on overlay (outside content) to close
-// more-modal
+// Click on overlay (outside content) to close, and dispatch
+// [data-action] clicks to their handlers. Two responsibilities, one
+// listener — keeps the cost of a click down to a single document-level
+// dispatch and avoids the redundant work the previous split had.
 let _moreOverlayPending = false;
-document.addEventListener('click', (e) => {
-  const overlay = document.getElementById('moreModalOverlay');
-  if (overlay && e.target === overlay && !_moreOverlayPending) {
+document.addEventListener('click', async (e) => {
+  // 1. Overlay backdrop clicks (close the matching modal).
+  const overlay = e.target;
+  if (overlay && overlay.id === 'moreModalOverlay' && !_moreOverlayPending) {
     closeMoreModal();
-  }
-  const filterOverlay = document.getElementById('recentFilterOverlay');
-  if (filterOverlay && e.target === filterOverlay) {
+  } else if (overlay && overlay.id === 'recentFilterOverlay') {
     closeRecentFilterModal();
-  }
-  const quickNavOverlay = document.getElementById('quickNavOverlay');
-  if (quickNavOverlay && e.target === quickNavOverlay) {
+  } else if (overlay && overlay.id === 'quickNavOverlay') {
     closeQuickNavModal();
   }
-});
 
-// Single event listener on document - matches tab-out pattern
-document.addEventListener('click', async (e) => {
+  // 2. data-action delegation.
   const actionEl = e.target.closest('[data-action]');
   if (!actionEl) return;
 
