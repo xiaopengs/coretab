@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "CoreTab",
-  "version": "1.1.0",
+  "version": "2.4.0",
   "description": "Default new tab page with tab management, GitHub trending, and history",
   "permissions": ["tabs", "activeTab", "storage", "history"],
   "chrome_url_overrides": {
