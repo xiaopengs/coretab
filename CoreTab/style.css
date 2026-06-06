@@ -1009,8 +1009,238 @@ header .date {
 }
 
 /* ============================================================
-   EMPTY STATE
+   OPEN TABS HERO — prominent "Close all" CTA banner
+   Sits at the top of the Open Tabs section, before the
+   section header. Collapses gracefully when there are 0 tabs.
    ============================================================ */
+.open-tabs-hero {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 18px 16px 16px;
+  margin-bottom: 22px;
+
+  background:
+    radial-gradient(120% 180% at 0% 50%, rgba(252, 121, 129, 0.12) 0%, rgba(252, 121, 129, 0) 55%),
+    linear-gradient(180deg, #fff7f5 0%, #fff1ec 100%);
+  border: 1.5px solid rgba(252, 121, 129, 0.22);
+  border-radius: 16px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 8px 24px -16px rgba(252, 121, 129, 0.35),
+    0 1px 2px rgba(0, 0, 0, 0.02);
+
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.25s ease,
+    border-color 0.25s ease,
+    opacity 0.25s ease,
+    max-height 0.3s ease,
+    padding 0.3s ease,
+    margin 0.3s ease;
+  max-height: 200px;
+  animation: heroSlideIn 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.open-tabs-hero::before {
+  /* Subtle noise/gloss line on the top edge */
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 12%;
+  right: 12%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(252, 121, 129, 0.4) 50%, transparent 100%);
+  pointer-events: none;
+}
+
+.open-tabs-hero:hover {
+  border-color: rgba(252, 121, 129, 0.45);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 14px 32px -16px rgba(252, 121, 129, 0.5),
+    0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.open-tabs-hero[data-state="empty"] {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin: 0;
+  opacity: 0;
+  border-color: transparent;
+  box-shadow: none;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.open-tabs-hero-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(120% 120% at 30% 25%, #ffd0c4 0%, #fc7981 65%, #e85a64 100%);
+  color: #fff;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.5) inset,
+    0 0 0 4px rgba(252, 121, 129, 0.10),
+    0 6px 14px -6px rgba(252, 121, 129, 0.55);
+  flex-shrink: 0;
+}
+
+.open-tabs-hero-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.open-tabs-hero-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.open-tabs-hero-title {
+  font-family: 'Newsreader', Georgia, serif;
+  font-weight: 500;
+  font-size: 17px;
+  font-style: italic;
+  color: var(--warm-charcoal);
+  letter-spacing: -0.2px;
+  line-height: 1.25;
+}
+
+.open-tabs-hero-title .hero-count {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-style: normal;
+  font-weight: 700;
+  font-size: 19px;
+  color: var(--pomegranate-400);
+  margin: 0 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.open-tabs-hero-sub {
+  font-size: 12.5px;
+  color: var(--warm-silver);
+  letter-spacing: 0.1px;
+  line-height: 1.35;
+}
+
+.open-tabs-hero-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px 11px 18px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ff8a91 0%, #fc7981 50%, #e85a64 100%);
+  color: #fff;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.35) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.08) inset,
+    0 8px 18px -8px rgba(252, 121, 129, 0.7);
+  transition:
+    transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.18s ease,
+    filter 0.18s ease;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.open-tabs-hero-cta:hover {
+  transform: translateY(-1px);
+  filter: saturate(1.05);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.35) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.08) inset,
+    0 12px 24px -8px rgba(252, 121, 129, 0.75);
+}
+
+.open-tabs-hero-cta:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.open-tabs-hero-cta:focus-visible {
+  outline: 2px solid var(--pomegranate-400);
+  outline-offset: 3px;
+}
+
+.open-tabs-hero-cta .cta-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+.open-tabs-hero-cta .cta-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: -2px;
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.open-tabs-hero-cta .cta-arrow svg {
+  width: 14px;
+  height: 14px;
+}
+
+.open-tabs-hero-cta:hover .cta-arrow {
+  transform: translateX(2px);
+}
+
+@keyframes heroSlideIn {
+  0%   { opacity: 0; transform: translateY(-6px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .open-tabs-hero { animation: none; }
+  .open-tabs-hero-cta { transition: none; }
+  .open-tabs-hero-cta:hover { transform: none; }
+}
+
+@media (max-width: 720px) {
+  .open-tabs-hero {
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      "icon text"
+      "cta   cta";
+    row-gap: 14px;
+  }
+  .open-tabs-hero-icon { grid-area: icon; }
+  .open-tabs-hero-text { grid-area: text; }
+  .open-tabs-hero-cta {
+    grid-area: cta;
+    justify-content: center;
+  }
+  .open-tabs-hero-title { font-size: 16px; }
+}
+
+
 .missions-empty-state {
   column-span: all;
   display: flex;

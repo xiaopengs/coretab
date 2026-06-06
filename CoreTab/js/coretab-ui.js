@@ -43,6 +43,32 @@ function updateTabCounts() {
   if (closeCountEl) {
     closeCountEl.textContent = totalTabs;
   }
+
+  // Hero banner sync — collapses to nothing when there are no tabs.
+  const hero = document.getElementById('openTabsHero');
+  const heroCount = document.getElementById('openTabsHeroCount');
+  const heroTitle = document.getElementById('openTabsHeroTitle');
+  const heroSub = document.getElementById('openTabsHeroSub');
+  if (hero) {
+    hero.setAttribute('data-state', totalTabs === 0 ? 'empty' : 'filled');
+  }
+  if (heroCount) {
+    heroCount.textContent = totalTabs;
+  }
+  if (heroTitle) {
+    if (totalTabs === 0) {
+      heroTitle.textContent = 'All caught up';
+    } else if (totalTabs === 1) {
+      heroTitle.innerHTML = '1 个标签页待清理';
+    } else {
+      heroTitle.innerHTML = `<span class="hero-count">${totalTabs}</span> 个标签页待清理`;
+    }
+  }
+  if (heroSub) {
+    heroSub.textContent = totalTabs === 0
+      ? '当前没有打开的标签页'
+      : '一键释放浏览器内存，让焦点回到当下';
+  }
 }
 
 function initGreeting() {
