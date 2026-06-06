@@ -180,6 +180,23 @@ function enqueueRecent(fn) {
   return next;
 }
 
+// Debounce window: a single URL completing multiple times within this many
+// ms is treated as one navigation. Cuts down on chrome.storage.local reads
+// and writes when SPA route changes, redirects, or refreshes fire onUpdated
+// repeatedly for the same URL.
+const RECENT_DEDUPE_WINDOW_MS = 60 * 1000;
+const _recentLastWrite = new Map(); // url -> epoch ms of last addRecentTab
+
+function shouldSkipRecentWrite(url) {
+  const now = Date.now();
+  const last = _recentLastWrite.get(url);
+  if (typeof last === 'number' && (now - last) < RECENT_DEDUPE_WINDOW_MS) {
+    return true;
+  }
+  _recentLastWrite.set(url, now);
+  return false;
+}
+
 // History backfill: import existing browser history for tracked domains
 // Tracks per-domain completion to avoid re-running for already-backfilled domains
 const RECENT_BACKFILL_STATE_KEY = 'coretab_recent_backfill_state';
@@ -306,7 +323,13 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     updateBadge();
     // 记录到 Recent Tabs
     if (changeInfo.status === 'complete' && tab.url && tab.title) {
-      void addRecentTab(tab.url, tab.title);
+      // Dedup: a single URL can complete multiple times in a short window
+      // (SPA route changes, redirects, refresh bursts). The 60s window
+      // keeps visitCount from inflating and avoids repeated
+      // chrome.storage.local read-modify-write round-trips.
+      if (!shouldSkipRecentWrite(tab.url)) {
+        void addRecentTab(tab.url, tab.title);
+      }
     }
   }
 });
