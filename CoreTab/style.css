@@ -1014,10 +1014,10 @@ header .date {
    section header. Collapses gracefully when there are 0 tabs.
    ============================================================ */
 /* ============================================================
-   Quick Action bar — flat, single-line action strip above Open Tabs.
-   Sits between #openTabsSection and the section header. Close All
-   is the first (and currently only) action; new actions drop in
-   beside it as additional .quick-action-btn elements.
+   Quick Action bar — flat, single-line action strip at the very top
+   of the dashboard, above Navigation. Close All is the first (and
+   currently only) action; new actions drop in beside it as
+   additional .quick-action-btn elements.
    ============================================================ */
 .quick-action-bar {
   display: flex;
@@ -1028,6 +1028,10 @@ header .date {
   background: var(--pure-white);
   border: 1px solid var(--oat-border);
   border-radius: 12px;
+}
+
+.quick-action-bar-top {
+  margin-top: 0;
 }
 
 .quick-action-label {

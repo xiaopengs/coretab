@@ -60,6 +60,28 @@
   </header>
 
   <!-- ================================================================
+       QUICK ACTION — Flat, single-line action strip. Close All is the
+       first action. Add more actions by appending buttons to
+       .quick-action-items. Sits above Navigation for top-of-fold access.
+       ================================================================ -->
+  <section class="quick-action-bar quick-action-bar-top" aria-label="Quick actions">
+    <div class="quick-action-label">
+      <span class="qa-label-text">Quick Action</span>
+    </div>
+    <div class="quick-action-items">
+      <button class="quick-action-btn qa-btn-destructive" data-action="close-all-open-tabs">
+        <span class="qa-icon" aria-hidden="true">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
+          </svg>
+        </span>
+        <span class="qa-btn-text">Close all tabs</span>
+        <span class="qa-btn-count" id="qaCloseAllCount">0</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ================================================================
        QUICK NAVIGATION — Frequently used websites, editable compact cards
        ================================================================ -->
   <div class="quick-nav-section" id="quickNavSection">
@@ -74,6 +96,28 @@
       <div class="section-count" id="quickNavCount"></div>
     </div>
     <div class="quick-nav-grid" id="quickNavGrid"></div>
+  </div>
+
+  <!-- ================================================================
+       CLOSED TABS — Recently closed tabs grouped by date and site
+       Placed above Recent Tabs so freshly-closed items stay in view.
+       ================================================================ -->
+  <div class="closed-section" id="closedSection">
+    <div class="section-header">
+      <h2>Closed Tabs</h2>
+      <div class="section-line"></div>
+      <div class="section-count" id="closedSectionCount"></div>
+    </div>
+    <div id="closedTabsContainer"></div>
+    <div class="closed-empty" id="closedEmpty" style="display:none">
+      <div class="empty-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75m6 0a3 3 0 0 1-3-3m3 3h.008v.008H17v-.008ZM9 19.5h6m-6-2h6a.75.75 0 0 1 0 1.5H9a.75.75 0 0 1 0-1.5ZM9 4.5h6m-6 0a3 3 0 0 1 3 3m-3-3a3 3 0 0 0-3 3m3-3H9a.75.75 0 0 0 0 1.5h6a.75.75 0 0 0 0-1.5H9Z" />
+        </svg>
+      </div>
+      <div class="empty-title">No closed tabs</div>
+      <div class="empty-subtitle">Tabs you close will appear here.</div>
+    </div>
   </div>
 
   <!-- ================================================================
@@ -106,25 +150,6 @@
        CURRENT TABS — Domain grouped cards (mission-card style)
        ================================================================ -->
   <div class="active-section" id="openTabsSection">
-    <!-- Quick Action bar — flat, single-line action strip. Close All is the first
-         action. Add more actions by appending buttons to .quick-action-items. -->
-    <section class="quick-action-bar" aria-label="Quick actions">
-      <div class="quick-action-label">
-        <span class="qa-label-text">Quick Action</span>
-      </div>
-      <div class="quick-action-items">
-        <button class="quick-action-btn qa-btn-destructive" data-action="close-all-open-tabs">
-          <span class="qa-icon" aria-hidden="true">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
-            </svg>
-          </span>
-          <span class="qa-btn-text">Close all tabs</span>
-          <span class="qa-btn-count" id="qaCloseAllCount">0</span>
-        </button>
-      </div>
-    </section>
-
     <div class="section-header">
       <h2>Open Tabs</h2>
       <div class="section-line"></div>
@@ -248,27 +273,6 @@
       </div>
       <div class="empty-title">All tabs closed</div>
       <div class="empty-subtitle">Enjoy the calm.</div>
-    </div>
-  </div>
-
-  <!-- ================================================================
-       CLOSED TABS — Recently closed tabs grouped by date and site
-       ================================================================ -->
-  <div class="closed-section" id="closedSection">
-    <div class="section-header">
-      <h2>Closed Tabs</h2>
-      <div class="section-line"></div>
-      <div class="section-count" id="closedSectionCount"></div>
-    </div>
-    <div id="closedTabsContainer"></div>
-    <div class="closed-empty" id="closedEmpty" style="display:none">
-      <div class="empty-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75m6 0a3 3 0 0 1-3-3m3 3h.008v.008H17v-.008ZM9 19.5h6m-6-2h6a.75.75 0 0 1 0 1.5H9a.75.75 0 0 1 0-1.5ZM9 4.5h6m-6 0a3 3 0 0 1 3 3m-3-3a3 3 0 0 0-3 3m3-3H9a.75.75 0 0 0 0 1.5h6a.75.75 0 0 0 0-1.5H9Z" />
-        </svg>
-      </div>
-      <div class="empty-title">No closed tabs</div>
-      <div class="empty-subtitle">Tabs you close will appear here.</div>
     </div>
   </div>
 
