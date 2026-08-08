@@ -82,10 +82,10 @@ function setupQuickNavResizeObserver() {
 
 function getQuickNavCollapsedSlots(grid) {
   const minCardWidth = 156;
-  const gap = 10;
+  const gap = 8;
   const width = grid?.clientWidth || window.innerWidth || minCardWidth;
   const columns = Math.max(1, Math.floor((width + gap) / (minCardWidth + gap)));
-  return columns * 2;
+  return columns * 3;
 }
 
 function renderQuickNav(links) {
