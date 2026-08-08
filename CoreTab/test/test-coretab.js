@@ -115,7 +115,7 @@ console.log('\n--- style.css 测试 ---\n');
 test('包含设计 token', css.includes(':root') && css.includes('--cream'));
 test('包含响应式适配', css.includes('@media'));
 test('包含 Quick Navigation 样式', css.includes('.quick-nav-section') && css.includes('.quick-nav-card'));
-test('Quick Navigation 主面板限制两行并提供 More 样式', css.includes('max-height: 118px') && css.includes('.quick-nav-more-card') && css.includes('.quick-nav-error'));
+test('Quick Navigation 主面板限制三行并提供 More 样式', css.includes('max-height: 148px') && css.includes('.quick-nav-more-card') && css.includes('.quick-nav-error'));
 test('设计 token 补全 --matcha-500/700 避免按钮透明', css.includes('--matcha-500:') && css.includes('--matcha-700:') && css.includes('--matcha-200:') && css.includes('--matcha-400:'));
 test('pill-btn hover 不再使用 rotateZ/translateY 飞出动画', !css.includes('rotateZ(-8deg) translateY(-80%)') && !css.includes('rotateZ(-8deg) translateY'));
 test('Quick Navigation 确认按钮继承 pill-btn 尺寸仅覆盖颜色', css.includes('.quick-nav-confirm-btn') && css.includes('background: #078a52') && css.includes('border-color: #078a52') && !css.includes('.quick-nav-confirm-btn {\n  display: inline-flex'));
