@@ -54,7 +54,8 @@ test('声明 storage 权限', manifest.permissions?.includes('storage'));
 test('声明 history 权限', manifest.permissions?.includes('history'));
 test('host_permissions 包含 GitHub API', manifest.host_permissions?.includes('https://api.github.com/*'));
 test('host_permissions 包含 Google favicon 服务（coretab-favicon-cache.js 依赖）', manifest.host_permissions?.includes('https://www.google.com/*'));
-test('host_permissions 数量小且明确（<= 2 个）', Array.isArray(manifest.host_permissions) && manifest.host_permissions.length <= 2);
+test('host_permissions 包含 gstatic 重定向域（解决 favicon CORS 重定向问题）', manifest.host_permissions?.some(p => p.includes('gstatic.com')));
+test('host_permissions 数量小且明确（<= 4 个）', Array.isArray(manifest.host_permissions) && manifest.host_permissions.length <= 4);
 test('不再申请 <all_urls> 权限', !JSON.stringify(manifest.host_permissions || []).includes('<all_urls>'));
 
 console.log('\n--- index.html / JS 拆分测试 ---\n');

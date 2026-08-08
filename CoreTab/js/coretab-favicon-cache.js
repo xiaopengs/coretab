@@ -22,6 +22,11 @@ const DEFAULT_FAVICON = 'data:image/svg+xml,' + encodeURIComponent(
 // ── In-memory cache (domain → dataURL) ──────────────────
 let _faviconCache = null;
 let _faviconPending = new Set();
+// Temporary failure blacklist: avoid spamming fetch() for domains that
+// repeatedly fail (CORS / network). Expires after FAIL_COOLDOWN_MS so we
+// retry occasionally in case the network condition / permissions changed.
+const FAIL_COOLDOWN_MS = 10 * 60 * 1000; // 10 minutes
+const _faviconFailedDomains = new Map(); // domain → epoch ms of failure
 
 // ── Init: load persisted cache on startup ───────────────
 async function initFaviconCache() {
@@ -91,17 +96,31 @@ async function cacheFavicon(domain) {
   // Already cached or fetching → skip
   if (_faviconCache && _faviconCache.has(domain)) return;
   if (_faviconPending.has(domain)) return;
+
+  // Respect the temporary failure cooldown to avoid hammering the network
+  // and flooding the console with repeated CORS errors.
+  const lastFailure = _faviconFailedDomains.get(domain);
+  if (typeof lastFailure === 'number' && (Date.now() - lastFailure) < FAIL_COOLDOWN_MS) {
+    return;
+  }
+
   _faviconPending.add(domain);
 
   const url = GOOGLE_FAVICON_BASE + '?domain=' + encodeURIComponent(domain) + '&sz=' + FAVICON_SIZE;
 
   try {
     const resp = await fetch(url);
-    if (!resp.ok) return;
+    if (!resp.ok) {
+      _faviconFailedDomains.set(domain, Date.now());
+      return;
+    }
 
     const blob = await resp.blob();
     // Reject non-image responses (Google sometimes returns HTML error pages)
-    if (!blob.type.startsWith('image/')) return;
+    if (!blob.type.startsWith('image/')) {
+      _faviconFailedDomains.set(domain, Date.now());
+      return;
+    }
 
     const dataUrl = await new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -112,9 +131,12 @@ async function cacheFavicon(domain) {
 
     if (!_faviconCache) _faviconCache = new Map();
     _faviconCache.set(domain, dataUrl);
+    // Successful fetch — clear any prior failure state
+    _faviconFailedDomains.delete(domain);
     _schedulePersist();
   } catch {
-    // Network error or CORS — silently skip, will try again next render
+    // Network error or CORS — record failure and stop retrying for a while
+    _faviconFailedDomains.set(domain, Date.now());
   } finally {
     _faviconPending.delete(domain);
   }
