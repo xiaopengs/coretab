@@ -6,6 +6,7 @@
   <title>CoreTab</title>
 
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="styles/workspaces.css">
 </head>
 <body>
 <div class="container">
@@ -13,7 +14,7 @@
   <!-- ================================================================
        HEADER — CoreTab logo, greeting, search and settings
        ================================================================ -->
-  <header>
+  <header class="workspace-header">
     <div class="header-left">
       <div class="logo">
         <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -30,7 +31,12 @@
       <h1 id="greeting">Good morning</h1>
       <div class="date" id="dateDisplay"></div>
     </div>
-    <div class="header-search">
+    <nav class="workspace-nav" aria-label="工作台导航">
+      <a href="#tabs" data-workspace-link="tabs" aria-current="page"><span data-ws-icon="tabs"></span>Tabs</a>
+      <a href="#prompts" data-workspace-link="prompts"><span data-ws-icon="spark"></span>Prompts</a>
+      <a href="#meetings" data-workspace-link="meetings"><span data-ws-icon="mic"></span>Meetings</a>
+    </nav>
+    <div class="header-search" id="tabsHeaderSearch">
       <div class="search-box">
         <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
@@ -43,6 +49,12 @@
         </button>
       </div>
       <div class="search-results" id="searchResults" style="display:none"></div>
+    </div>
+    <div class="header-search" id="newWorkspaceSearch" hidden>
+      <div class="search-box">
+        <span data-ws-icon="search"></span>
+        <input type="search" id="workspaceSearch" placeholder="搜索工作台…" aria-label="搜索当前工作台" autocomplete="off">
+      </div>
     </div>
     <div class="header-actions">
       <button class="settings-btn github-link-btn" id="githubRepoBtn" aria-label="Open GitHub repository" title="GitHub repository" data-action="open-github" data-url="https://github.com/xiaopengs/coretab">
@@ -59,6 +71,7 @@
     </div>
   </header>
 
+  <main id="tabsWorkspace" data-workspace-panel="tabs" aria-label="Tabs 工作台">
   <!-- ================================================================
        QUICK ACTION — Flat, single-line action strip. Close All is the
        first action. Add more actions by appending buttons to
@@ -310,7 +323,19 @@
     </div>
   </div>
 
+  </main>
+
+  <main id="promptsWorkspace" class="ws-page" data-workspace-panel="prompts" lang="zh-CN" aria-label="Prompts 工作台" hidden>
+    <div class="ws-page-heading"><span class="ws-heading-icon" data-ws-icon="spark"></span><div><h1>Prompt Library</h1><p>管理你的 AI 提示词，提升工作效率</p></div></div>
+    <div class="ws-empty ws-panel"><span data-ws-icon="spark"></span><h2>你的 Prompt 工作台</h2><p>分类、收藏与复用，让好灵感随时可用。</p><span class="ws-badge">框架已就绪 · 功能建设中</span></div>
+  </main>
+  <main id="meetingsWorkspace" class="ws-page" data-workspace-panel="meetings" lang="zh-CN" aria-label="Meetings 工作台" hidden>
+    <div class="ws-page-heading"><span class="ws-heading-icon" data-ws-icon="mic"></span><div><h1>会议实时转写</h1><p>实时转写 · 自动摘要 · 行动项</p></div></div>
+    <div class="ws-empty ws-panel"><span data-ws-icon="mic"></span><h2>让每一次会议都有价值</h2><p>会议记录、关键结论和行动项，在这里有序归档。</p><span class="ws-badge">框架已就绪 · 尚未接入录音与 AI 服务</span></div>
+  </main>
 </div><!-- end .container -->
+
+<dialog id="workspaceDialog" class="ws-dialog" aria-labelledby="wsDialogTitle" lang="zh-CN"></dialog>
 
 <!-- ================================================================
      TOAST — Notification popup
@@ -451,5 +476,6 @@
 <script src="js/coretab-quick-nav.js"></script>
 <script src="js/coretab-ui.js"></script>
 <script src="js/coretab-main.js"></script>
+<script src="js/coretab-workspaces.js"></script>
 </body>
 </html>
