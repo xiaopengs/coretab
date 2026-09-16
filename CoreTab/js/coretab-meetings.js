@@ -13,6 +13,155 @@
   let elapsed = 0;
   let pausedAt = null;
 
+  /* ── Web Speech API (ASR) ── */
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let recognition = null;
+  let recognizing = false;
+  let currentSpeaker = 'Speaker';
+
+  function startRecognition() {
+    if (!SpeechRecognition || recognizing) return;
+    try {
+      recognition = new SpeechRecognition();
+      recognition.lang = 'zh-CN';
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
+
+      recognition.onresult = (e) => {
+        if (!active) return;
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          if (e.results[i].isFinal) {
+            const text = e.results[i][0].transcript.trim();
+            if (text) {
+              active.transcript.push({ speaker: currentSpeaker, text, timestamp: elapsed });
+              active.updatedAt = Date.now();
+              renderActive();
+              scrollTranscript();
+            }
+          }
+        }
+      };
+
+      recognition.onerror = (e) => {
+        if (e.error === 'no-speech' || e.error === 'aborted') return;
+        showToast('语音识别出错：' + e.error);
+        stopRecognition();
+      };
+
+      recognition.onend = () => {
+        if (recognizing && active && !pausedAt) {
+          try { recognition.start(); } catch { stopRecognition(); }
+        }
+      };
+
+      recognition.start();
+      recognizing = true;
+    } catch (e) {
+      showToast('无法启动语音识别：' + e.message);
+    }
+  }
+
+  function stopRecognition() {
+    recognizing = false;
+    if (recognition) {
+      try { recognition.stop(); } catch {}
+      recognition = null;
+    }
+  }
+
+  function scrollTranscript() {
+    const list = root.querySelector('#transcriptList');
+    if (list) list.scrollTop = list.scrollHeight;
+  }
+
+  /* ── Export helpers ── */
+  function exportTXT(m) {
+    const lines = [];
+    lines.push(`会议：${m.title}`);
+    lines.push(`时间：${new Date(m.createdAt).toLocaleString('zh-CN')}`);
+    lines.push(`时长：${formatDuration(m.duration)}`);
+    lines.push(`参与人：${m.participants.join(', ')}`);
+    lines.push('');
+
+    if (m.summary.length) {
+      lines.push('═══ 会议摘要 ═══');
+      m.summary.forEach(s => lines.push(`• ${s}`));
+      lines.push('');
+    }
+    if (m.keyPoints.length) {
+      lines.push('═══ 关键结论 ═══');
+      m.keyPoints.forEach(p => lines.push(`• ${p}`));
+      lines.push('');
+    }
+    if (m.actionItems.length) {
+      lines.push('═══ 行动项 ═══');
+      m.actionItems.forEach(a => lines.push(`[${a.completed ? '✓' : ' '}] ${a.content}`));
+      lines.push('');
+    }
+    if (m.transcript.length) {
+      lines.push('═══ 完整转写 ═══');
+      m.transcript.forEach(t => lines.push(`[${formatDuration(t.timestamp)}] ${t.speaker}：${t.text}`));
+    }
+    return lines.join('\n');
+  }
+
+  function exportMarkdown(m) {
+    const lines = [];
+    lines.push(`# ${m.title}`);
+    lines.push('');
+    lines.push(`- **时间**：${new Date(m.createdAt).toLocaleString('zh-CN')}`);
+    lines.push(`- **时长**：${formatDuration(m.duration)}`);
+    lines.push(`- **参与人**：${m.participants.join(', ')}`);
+    lines.push('');
+
+    if (m.summary.length) {
+      lines.push('## 会议摘要');
+      lines.push('');
+      m.summary.forEach(s => lines.push(`- ${s}`));
+      lines.push('');
+    }
+    if (m.keyPoints.length) {
+      lines.push('## 关键结论');
+      lines.push('');
+      m.keyPoints.forEach(p => lines.push(`- ${p}`));
+      lines.push('');
+    }
+    if (m.actionItems.length) {
+      lines.push('## 行动项');
+      lines.push('');
+      m.actionItems.forEach(a => lines.push(`- [${a.completed ? 'x' : ' '}] ${a.content}`));
+      lines.push('');
+    }
+    if (m.transcript.length) {
+      lines.push('## 完整转写');
+      lines.push('');
+      m.transcript.forEach(t => lines.push(`**${t.speaker}** (${formatDuration(t.timestamp)})：${t.text}`));
+      lines.push('');
+    }
+    return lines.join('\n');
+  }
+
+  function downloadFile(content, filename, mime) {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  }
+
+  function exportMeeting(m, format) {
+    const safeTitle = m.title.replace(/[^\w\u4e00-\u9fff]+/g, '_').slice(0, 40);
+    const date = new Date(m.createdAt).toISOString().slice(0, 10);
+    if (format === 'txt') {
+      downloadFile(exportTXT(m), `${date}_${safeTitle}.txt`, 'text/plain;charset=utf-8');
+    } else {
+      downloadFile(exportMarkdown(m), `${date}_${safeTitle}.md`, 'text/markdown;charset=utf-8');
+    }
+  }
+
   function valid(m) {
     return m && ['id', 'title', 'status'].every(k => typeof m[k] === 'string') &&
       Array.isArray(m.transcript) && Array.isArray(m.summary) && Array.isArray(m.keyPoints) && Array.isArray(m.actionItems) &&
@@ -60,6 +209,8 @@
         </div>
         <div class="meeting-item-actions">
           <button class="ws-btn" data-m-action="view">${icon('open')}查看详情</button>
+          <button class="ws-btn" data-m-action="export-txt" data-m-id="${esc(m.id)}">导出 TXT</button>
+          <button class="ws-btn" data-m-action="export-md" data-m-id="${esc(m.id)}">导出 MD</button>
           <button class="ws-btn danger" data-m-action="delete">${icon('trash')}删除</button>
         </div>
       </article>
@@ -70,8 +221,17 @@
     if (!active) return;
     root.querySelector('#meetingTitle').textContent = active.title;
     root.querySelector('#meetingTimer').textContent = formatDuration(elapsed);
-    root.querySelector('#meetingStatus').textContent = pausedAt ? '已暂停' : '正在录音';
-    root.querySelector('#meetingStatus').className = pausedAt ? 'meeting-status paused' : 'meeting-status live';
+    const statusEl = root.querySelector('#meetingStatus');
+    if (pausedAt) {
+      statusEl.textContent = '已暂停';
+      statusEl.className = 'meeting-status paused';
+    } else if (recognizing) {
+      statusEl.textContent = '正在录音';
+      statusEl.className = 'meeting-status live';
+    } else {
+      statusEl.textContent = '手动模式';
+      statusEl.className = 'meeting-status paused';
+    }
     root.querySelector('#transcriptList').innerHTML = active.transcript.map(t => `
       <div class="transcript-item">
         <div class="transcript-speaker">${esc(t.speaker)}</div>
@@ -112,11 +272,13 @@
     root.querySelector('#meetingActive').hidden = false;
     renderActive();
     startTimer();
+    startRecognition();
   }
 
   function endMeeting() {
     if (!active) return;
     stopTimer();
+    stopRecognition();
     active.status = 'ended';
     active.duration = elapsed;
     active.updatedAt = Date.now();
@@ -135,10 +297,12 @@
     const speaker = root.querySelector('#transcriptSpeaker').value.trim() || 'Speaker';
     const text = root.querySelector('#transcriptText').value.trim();
     if (!text) return;
+    currentSpeaker = speaker;
     active.transcript.push({ speaker, text, timestamp: elapsed });
     active.updatedAt = Date.now();
     root.querySelector('#transcriptText').value = '';
     renderActive();
+    scrollTranscript();
   }
 
   function addSummary() {
@@ -188,11 +352,18 @@
         <section><h3>${icon('shield')}行动项</h3><ul>${m.actionItems.map(a => `<li class="action-item ${a.completed ? 'completed' : ''}"><input type="checkbox" disabled ${a.completed ? 'checked' : ''}><span>${esc(a.content)}</span></li>`).join('') || '<li class="ws-muted">暂无行动项</li>'}</ul></section>
         <section><h3>${icon('note')}完整转写</h3><div class="transcript-list">${m.transcript.map(t => `<div class="transcript-item"><div class="transcript-speaker">${esc(t.speaker)}</div><div class="transcript-time">${formatDuration(t.timestamp)}</div><div class="transcript-text">${esc(t.text)}</div></div>`).join('') || '<p class="ws-muted">暂无转写记录</p>'}</div></section>
       </div>
-      <div class="ws-dialog-actions"><button type="button" class="ws-btn danger" id="deleteMeetingDetail">${icon('trash')}删除会议</button><button type="button" class="ws-btn" data-ws-close>关闭</button></div>`, () => {});
+      <div class="ws-dialog-actions">
+        <button type="button" class="ws-btn danger" id="deleteMeetingDetail">${icon('trash')}删除会议</button>
+        <button type="button" class="ws-btn" id="exportMeetingTXT">${icon('open')}导出 TXT</button>
+        <button type="button" class="ws-btn" id="exportMeetingMD">${icon('open')}导出 MD</button>
+        <button type="button" class="ws-btn" data-ws-close>关闭</button>
+      </div>`, () => {});
     document.getElementById('deleteMeetingDetail').addEventListener('click', () => {
       if (!window.confirm(`确定删除"${m.title}"？此操作不可恢复。`)) return;
       if (update(items => items.filter(item => item.id !== m.id))) { W.closeDialog(); renderList(); showToast('会议已删除'); }
     });
+    document.getElementById('exportMeetingTXT').addEventListener('click', () => exportMeeting(m, 'txt'));
+    document.getElementById('exportMeetingMD').addEventListener('click', () => exportMeeting(m, 'md'));
   }
 
   function createMeeting() {
@@ -215,12 +386,13 @@
       return;
     }
     initialized = true;
+    const hasASR = !!SpeechRecognition;
     root.innerHTML = `<div class="ws-page-heading"><span class="ws-heading-icon">${icon('mic')}</span><div><h1>会议实时转写</h1><p>实时转写 · 自动摘要 · 行动项</p></div><button class="ws-btn primary" data-m-action="create">${icon('plus')}新建会议</button></div>
-      <div id="meetingEmpty" class="ws-empty ws-panel">${icon('mic')}<h2>让每一次会议都有价值</h2><p>会议记录、关键结论和行动项，在这里有序归档。</p><span class="ws-badge">框架已就绪 · 尚未接入录音与 AI 服务</span></div>
+      <div id="meetingEmpty" class="ws-empty ws-panel">${icon('mic')}<h2>让每一次会议都有价值</h2><p>会议记录、关键结论和行动项，在这里有序归档。</p><span class="ws-badge">${hasASR ? '已接入 Web Speech API 语音识别' : '语音识别不可用 · 可手动输入转写'}</span></div>
       <div id="meetingActive" hidden>
         <div class="meeting-header">
           <div class="meeting-header-info">
-            <span class="meeting-status live" id="meetingStatus">正在录音</span>
+            <span class="meeting-status live" id="meetingStatus">${hasASR ? '正在录音' : '手动模式'}</span>
             <h2 id="meetingTitle">会议名称</h2>
             <div class="meeting-timer">${icon('clock')}<span id="meetingTimer">0:00</span></div>
           </div>
@@ -234,7 +406,7 @@
             <h3>${icon('note')}实时转写</h3>
             <div class="transcript-input">
               <input type="text" id="transcriptSpeaker" placeholder="说话人" value="Speaker">
-              <input type="text" id="transcriptText" placeholder="输入转写内容…">
+              <input type="text" id="transcriptText" placeholder="${hasASR ? '语音识别中…也可手动输入' : '输入转写内容…'}">
               <button class="ws-btn primary" data-m-action="add-transcript">${icon('plus')}添加</button>
             </div>
             <div id="transcriptList" class="transcript-list"></div>
@@ -267,15 +439,24 @@
       const button = e.target.closest('button');
       if (!button) return;
       const action = button.dataset.mAction;
+      const btnId = button.dataset.mId;
       const meeting = meetings.find(m => m.id === button.closest('[data-m-id]')?.dataset.mId);
       if (action === 'create') {
-        W.openDialog(`<div class="ws-dialog-head"><div><h2 id="wsDialogTitle">新建会议</h2><p>本地手动记录模式，不接入麦克风与 AI 服务</p></div><button type="button" class="ws-icon-btn" data-ws-close aria-label="关闭">${icon('close')}</button></div>
+        W.openDialog(`<div class="ws-dialog-head"><div><h2 id="wsDialogTitle">新建会议</h2><p>${hasASR ? '将自动启动麦克风进行语音识别' : '手动记录模式'}</p></div><button type="button" class="ws-icon-btn" data-ws-close aria-label="关闭">${icon('close')}</button></div>
           <form id="meetingForm"><label>会议名称<input id="meetingTitleInput" maxlength="100" placeholder="例如：产品评审会" autofocus></label><div class="ws-dialog-actions"><button type="button" class="ws-btn" data-ws-close>取消</button><button type="submit" class="ws-btn primary">开始会议</button></div></form>`, () => {});
         document.getElementById('meetingForm').addEventListener('submit', e => { e.preventDefault(); createMeeting(); });
       }
       if (action === 'pause') {
-        if (pausedAt) { elapsed += Date.now() - pausedAt; pausedAt = null; button.innerHTML = `${icon('pause')}暂停`; }
-        else { pausedAt = Date.now(); button.innerHTML = `${icon('play')}继续`; }
+        if (pausedAt) {
+          elapsed += Date.now() - pausedAt;
+          pausedAt = null;
+          button.innerHTML = `${icon('pause')}暂停`;
+          if (hasASR && !recognizing) startRecognition();
+        } else {
+          pausedAt = Date.now();
+          button.innerHTML = `${icon('play')}继续`;
+          stopRecognition();
+        }
         renderActive();
       }
       if (action === 'end') {
@@ -286,6 +467,14 @@
       if (action === 'add-keypoint') addKeyPoint();
       if (action === 'add-action') addActionItem();
       if (action === 'view' && meeting) viewMeeting(meeting);
+      if (action === 'export-txt' && btnId) {
+        const m = meetings.find(item => item.id === btnId);
+        if (m) exportMeeting(m, 'txt');
+      }
+      if (action === 'export-md' && btnId) {
+        const m = meetings.find(item => item.id === btnId);
+        if (m) exportMeeting(m, 'md');
+      }
       if (action === 'delete' && meeting) {
         if (window.confirm(`确定删除"${meeting.title}"？此操作不可恢复。`)) {
           if (update(items => items.filter(m => m.id !== meeting.id))) renderList();
@@ -309,6 +498,7 @@
         active.updatedAt = Date.now();
         update(items => items.map(m => m.id === active.id ? { ...m, ...active } : m));
       }
+      stopRecognition();
     });
     renderList();
   }
