@@ -29,7 +29,7 @@ window.CoreTabWorkspace = (() => {
     people: '<circle cx="9" cy="7" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M16 4a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 5v2"/>'
   };
   const icon = name => `<svg class="ws-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || paths.note}</svg>`;
-  const escape = value => escapeHtml(String(value ?? ''));
+  const escape = value => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   const searches = { prompts: '', meetings: '' };
   const handlers = {};
   const positions = { tabs: 0, prompts: 0, meetings: 0 };

@@ -106,9 +106,7 @@ async function getRecentTabs() {
 async function saveRecentTabs(tabs) {
   try {
     await chrome.storage.local.set({ [RECENT_TABS_KEY]: tabs });
-  } catch (err) {
-    console.error('[coretab-bg] saveRecentTabs: chrome.storage.local write failed', err);
-  }
+  } catch { /* storage write failed — silent */ }
 }
 
 // Pure: drop recent entries older than the retention window.
@@ -125,11 +123,8 @@ async function pruneAndSaveRecentTabs() {
     const pruned = pruneRecentTabs(tabs);
     if (pruned.length < tabs.length) {
       await saveRecentTabs(pruned);
-      console.log(`[coretab-bg] Pruned ${tabs.length - pruned.length} expired recent-tab entries`);
     }
-  } catch (err) {
-    console.error('[coretab-bg] pruneAndSaveRecentTabs failed:', err);
-  }
+  } catch { /* prune failed — silent */ }
 }
 
 async function addRecentTab(url, title, visitedAt) {
@@ -236,13 +231,10 @@ async function backfillRecentTabs() {
         total++;
       }
       backfilled.push(domain);
-    } catch (err) {
-      console.error(`[coretab] backfill failed for ${domain}:`, err);
-    }
+    } catch { /* backfill failed for domain — silent */ }
   }
 
   await chrome.storage.local.set({ [RECENT_BACKFILL_STATE_KEY]: backfilled });
-  console.log(`[coretab] Backfilled ${total} history entries into Recent Tabs`);
 }
 
 const BADGE_COLORS = {

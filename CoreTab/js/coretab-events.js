@@ -101,7 +101,6 @@ document.addEventListener('click', async (e) => {
 
   // ---- Close all tabs ----
   if (action === 'close-all' || action === 'close-all-open-tabs') {
-    console.log('[coretab] close-all action detected');
     e.stopPropagation();
     await closeAllTabs();
     return;

@@ -54,8 +54,7 @@ function _schedulePersist() {
       const obj = Object.fromEntries(_faviconCache);
       await chrome.storage.local.set({ [FAVICON_CACHE_KEY]: obj });
     } catch (err) {
-      // Don't swallow silently — quota exhaustion is actionable.
-      console.error('[coretab] favicon cache persist failed:', err);
+      // Quota exhaustion - silently fail, cache will rebuild on next session
     }
   }, 2000);
 }

@@ -6,32 +6,13 @@ async function loadOpenTabs() {
     const currentTab = await chrome.tabs.getCurrent();
     const currentWindow = await chrome.windows.getCurrent();
 
-    console.log('[coretab] Total tabs found:', tabs.length);
-    console.log('[coretab] Current window ID:', currentWindow.id);
-    console.log('[coretab] Current tab ID:', currentTab?.id);
-
-    // 调试：打印所有标签页信息，看看哪些被过滤了
-    console.log('[coretab] All tabs:');
-    tabs.forEach((t, i) => {
-      const isSystem = isSystemUrl(t.url);
-      const isCurrentTab = currentTab?.id === t.id;
-      console.log(`  ${i + 1}. [${isSystem ? 'SYSTEM' : 'NORMAL'}] [${isCurrentTab ? 'CURRENT' : ''}] ${t.title} - ${t.url}`);
-    });
-
     // 先找出所有非系统的标签页
     const nonSystemTabs = tabs
       .filter(t => t.url && !isSystemUrl(t.url));
     
     // 过滤掉当前标签页（CoreTab自己）
     const realTabs = nonSystemTabs
-      .filter(t => {
-        const isCurrentTab = currentTab?.id === t.id;
-        // 总是过滤掉自己这个标签页
-        if (isCurrentTab) {
-          return false;
-        }
-        return true;
-      })
+      .filter(t => currentTab?.id !== t.id)
       .map(t => ({
         id: t.id,
         url: t.url,
@@ -40,15 +21,12 @@ async function loadOpenTabs() {
         windowId: t.windowId
       }));
 
-    console.log('[coretab] Real tabs (non-system):', realTabs.length);
-
     windowGroups = groupTabsByWindow(realTabs, currentWindow.id);
-    console.log('[coretab] Window groups:', windowGroups.length);
 
     renderOpenTabs(windowGroups);
     updateTabCounts();
   } catch (err) {
-    console.error('[coretab] Failed to load tabs:', err);
+    // Silently fail - tabs loading is best-effort
   }
 }
 
@@ -92,7 +70,6 @@ async function loadHistory() {
     historyGroups = groupHistoryByDomain(results);
     renderHistory(historyGroups);
   } catch (err) {
-    console.error('[coretab] Failed to load history:', err);
     const empty = document.getElementById('historyEmpty');
     if (empty) empty.style.display = 'block';
   }
@@ -119,7 +96,6 @@ async function loadGitHubTrending() {
     setCachedGitHub(projects);
     renderGitHubTrending(projects);
   } catch (err) {
-    console.error('[coretab] Failed to load GitHub trending:', err);
     if (grid) grid.innerHTML = '<p>Failed to load</p>';
   }
 }
@@ -178,15 +154,11 @@ async function restoreClosedTabsFromStorage() {
     // set and write it back to both stores.
     if (localSize < remoteSize) {
       try { localStorage.setItem(CLOSED_TABS_KEY, JSON.stringify(merged)); } catch {}
-      console.log(`[coretab] Restored ${remoteSize} closed-tab entries from chrome.storage.local`);
     } else if (remoteSize < localSize) {
-      chrome.storage.local.set({ [CLOSED_TABS_KEY]: merged }).catch((err) => {
-        console.error('[coretab] restoreClosedTabsFromStorage: write to chrome.storage.local failed', err);
-      });
-      console.log(`[coretab] Pushed ${localSize} closed-tab entries to chrome.storage.local`);
+      chrome.storage.local.set({ [CLOSED_TABS_KEY]: merged }).catch(() => {});
     }
   } catch (err) {
-    console.error('[coretab] restoreClosedTabsFromStorage failed:', err);
+    // Silently fail - storage restoration is best-effort
   }
 }
 
@@ -212,12 +184,9 @@ function saveClosedTabs(data) {
   try {
     localStorage.setItem(CLOSED_TABS_KEY, JSON.stringify(data));
     // Mirror to chrome.storage.local so data survives a localStorage clear.
-    // Log quota/IO failures instead of swallowing them silently.
-    chrome.storage.local.set({ [CLOSED_TABS_KEY]: data }).catch((err) => {
-      console.error('[coretab] saveClosedTabs: chrome.storage.local write failed', err);
-    });
+    chrome.storage.local.set({ [CLOSED_TABS_KEY]: data }).catch(() => {});
   } catch (err) {
-    console.error('[coretab] saveClosedTabs: localStorage write failed', err);
+    // Silently fail - storage is best-effort
   }
 }
 
@@ -243,10 +212,9 @@ async function pruneAndSaveClosedTabs() {
     const removed = pruneClosedTabs(closedTabs);
     if (removed > 0) {
       saveClosedTabs(closedTabs);
-      console.log(`[coretab] Pruned ${removed} expired closed-tab date group(s)`);
     }
   } catch (err) {
-    console.error('[coretab] pruneAndSaveClosedTabs failed:', err);
+    // Silently fail - pruning is best-effort
   }
 }
 

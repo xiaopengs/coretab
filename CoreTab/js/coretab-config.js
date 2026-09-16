@@ -91,7 +91,7 @@ async function getTrackedDomains() {
       return domains;
     }
   } catch (err) {
-    console.error('[coretab] Failed to read filter config:', err);
+    // Silently fail - config read is best-effort
   }
   _trackedDomains = [...DEFAULT_TRACKED_DOMAINS];
   return _trackedDomains;

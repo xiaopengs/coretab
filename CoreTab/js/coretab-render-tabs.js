@@ -142,7 +142,7 @@ async function loadClosedTabs() {
     const groups = getClosedTabsGrouped();
     renderClosedTabs(groups);
   } catch (err) {
-    console.error('[coretab] Failed to load closed tabs:', err);
+    // Loading failed - silently fail
   }
 }
 
@@ -255,7 +255,7 @@ function openClosedAllModal() {
   try {
     groups = getClosedTabsGrouped() || [];
   } catch (err) {
-    console.error('[coretab] openClosedAllModal: failed to read closed tabs', err);
+    // Failed to read closed tabs - silently fail
   }
   const total = groups.reduce((s, g) => s + g.entries.length, 0);
   if (count) count.textContent = `${total} closed`;

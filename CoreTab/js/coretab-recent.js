@@ -38,7 +38,7 @@ async function saveRecentTabs(tabs) {
   try {
     await chrome.storage.local.set({ [RECENT_TABS_KEY]: tabs });
   } catch (err) {
-    console.error('[coretab] saveRecentTabs: chrome.storage.local write failed', err);
+    // Storage write failed - silently fail
   }
 }
 
@@ -57,10 +57,9 @@ async function pruneAndSaveRecentTabs() {
     const pruned = pruneRecentTabs(tabs);
     if (pruned.length < tabs.length) {
       await saveRecentTabs(pruned);
-      console.log(`[coretab] Pruned ${tabs.length - pruned.length} expired recent-tab entries`);
     }
   } catch (err) {
-    console.error('[coretab] pruneAndSaveRecentTabs failed:', err);
+    // Pruning failed - silently fail
   }
 }
 
@@ -166,7 +165,7 @@ async function loadRecentTabs() {
     const groups = await getRecentTabsGrouped();
     renderRecentTabs(groups);
   } catch (err) {
-    console.error('[coretab] Failed to load recent tabs:', err);
+    // Loading failed - silently fail
   }
 }
 

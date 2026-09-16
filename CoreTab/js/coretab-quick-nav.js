@@ -48,7 +48,7 @@ async function getQuickNavLinks() {
     // Do not re-add deleted default links: user edits/deletions must stick.
     if (Array.isArray(links)) return links.filter(link => link && link.url);
   } catch (err) {
-    console.error('[coretab] Failed to load quick nav:', err);
+    // Storage read failed, use defaults
   }
 
   const defaults = DEFAULT_QUICK_NAV_LINKS.map(buildQuickNavLink).filter(link => link.url);
@@ -60,7 +60,6 @@ async function saveQuickNavLinks(links) {
   try {
     await chrome.storage.local.set({ [QUICK_NAV_KEY]: links });
   } catch (err) {
-    console.error('[coretab] Failed to save quick nav:', err);
     throw err;
   }
 }

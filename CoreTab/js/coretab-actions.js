@@ -148,7 +148,6 @@ async function _onFilterSave(e) {
   try {
     await saveTrackedDomains([..._filterDraft]);
   } catch (err) {
-    console.error('[coretab] Failed to save filter domains:', err);
     showToast('Save failed, please try again');
     return;
   }
@@ -258,7 +257,7 @@ async function performConfirmedAction() {
       hideConfirmDialog();
       await callback();
     } catch (err) {
-      console.error('[coretab] Confirm action failed:', err);
+      // Silently fail - confirm action is best-effort
     }
   } else {
     hideConfirmDialog();
@@ -287,13 +286,11 @@ async function closeDomainTabs(domain, windowId) {
 }
 
 async function closeAllTabs() {
-  console.log('[coretab] closeAllTabs called');
   // Refresh tab list before closing to get latest state
   await loadOpenTabs();
   const totalTabs = windowGroups.reduce((sum, wg) => {
     return sum + wg.domains.reduce((ds, d) => ds + d.tabs.length, 0);
   }, 0);
-  console.log('[coretab] Total tabs to close:', totalTabs);
 
   if (totalTabs === 0) {
     showToast('No tabs to close');
@@ -304,18 +301,15 @@ async function closeAllTabs() {
     'Close All Tabs',
     `Close all ${totalTabs} tabs across all windows? This will keep this page open.`,
     async () => {
-      console.log('[coretab] Confirm callback started');
       try {
         // Close ALL tabs across ALL windows except current tab
         const allTabs = await chrome.tabs.query({});
         const currentTab = await chrome.tabs.getCurrent();
-        console.log('[coretab] All tabs:', allTabs.length);
         const tabsToClose = allTabs.filter(t =>
           typeof t.id === 'number' &&
           t.id !== currentTab.id &&
           !isSystemUrl(t.url)
         );
-        console.log('[coretab] Tabs to close:', tabsToClose.length);
 
         // Record closed tabs before removing
         for (const tab of tabsToClose) {
@@ -323,11 +317,9 @@ async function closeAllTabs() {
         }
 
         const tabIdsToClose = tabsToClose.map(t => t.id);
-        console.log('[coretab] Tab IDs to remove:', tabIdsToClose);
 
         if (tabIdsToClose.length > 0) {
           await chrome.tabs.remove(tabIdsToClose);
-          console.log('[coretab] Tabs removed');
         }
         // Immediately refresh closed tabs display
         await loadClosedTabs();
@@ -336,7 +328,6 @@ async function closeAllTabs() {
           showToast(`${tabIdsToClose.length} tabs closed`);
         }, 100);
       } catch (err) {
-        console.error('[coretab] Failed to close tabs:', err);
         showToast('Failed to close tabs');
       }
     }
@@ -344,7 +335,6 @@ async function closeAllTabs() {
 }
 
 async function closeWindowTabs(windowId) {
-  console.log('[coretab] closeWindowTabs called for window:', windowId);
   const group = windowGroups.find(wg => wg.windowId === windowId);
   if (!group) return;
 
@@ -383,7 +373,6 @@ async function closeWindowTabs(windowId) {
           showToast(`${tabIdsToClose.length} tabs closed`);
         }, 100);
       } catch (err) {
-        console.error('[coretab] Failed to close window tabs:', err);
         showToast('Failed to close tabs');
       }
     }

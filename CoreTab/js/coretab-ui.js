@@ -202,9 +202,7 @@ async function performSearch(query) {
     }
 
     searchResults.style.display = 'block';
-  } catch (err) {
-    console.error('[coretab] Search failed:', err);
-  }
+  } catch { /* search failed — silent */ }
 }
 
 // Toast
