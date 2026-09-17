@@ -1,8 +1,8 @@
 /* Workspace-only layouts reuse the original Clay palette. */
 [data-workspace-panel][hidden], .header-search[hidden] { display: none !important; }
 .ws-icon { width: 18px; height: 18px; flex-shrink: 0; vertical-align: middle; }
-.workspace-header { gap: 20px; }
-.workspace-header .header-left { min-width: 160px; flex-shrink: 1; }
+.workspace-header { gap: 20px; flex-wrap: wrap; }
+.workspace-header .header-left { flex-basis: 100%; min-height: 60px; }
 .workspace-header .header-search { min-width: 140px; }
 .workspace-header #searchInput { min-width: 0; width: 100%; font-size: 13px; }
 .workspace-nav { display: flex; align-items: center; padding: 4px; border: 1px solid var(--oat-light); background: var(--pure-white); border-radius: var(--radius-pill); flex-shrink: 0; gap: 3px; }
@@ -12,7 +12,7 @@
 .workspace-nav a:focus-visible, .ws-page :focus-visible, .ws-dialog :focus-visible { outline: 2px solid var(--matcha-600); outline-offset: 3px; }
 #workspaceSearch { border: 0; background: transparent; color: var(--dark-charcoal); font: inherit; font-size: 13px; padding-left: 10px; width: 100%; min-width: 0; outline: none; }
 body[data-workspace="prompts"] .workspace-header, body[data-workspace="meetings"] .workspace-header { padding-bottom: 24px; margin-bottom: 32px; border-bottom: 1px solid var(--oat-light); }
-body:not([data-workspace="tabs"]) .workspace-header #greeting, body:not([data-workspace="tabs"]) .workspace-header #dateDisplay { display: none; }
+body:not([data-workspace="tabs"]) .workspace-header #greeting, body:not([data-workspace="tabs"]) .workspace-header #dateDisplay { visibility: hidden; height: 0; margin: 0; overflow: hidden; }
 body:not([data-workspace="tabs"]) .workspace-header .logo { margin-bottom: 0; }
 .ws-page { --ws-muted: #77776c; --ws-soft: #f0f6f0; font-size: 13px; color: var(--dark-charcoal); animation: ws-enter 180ms ease; }
 .ws-page h1 { font-size: 24px; letter-spacing: -.6px; font-weight: 650; }
