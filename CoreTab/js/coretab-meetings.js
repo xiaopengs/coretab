@@ -18,8 +18,16 @@
   let recognizing = false;
   let currentSpeaker = 'Speaker';
 
+  /* ── AI Analysis Engine ── */
+  let analysisEngine = null;
+  let aiProvider = null;
+
   function getASRSettings() {
     return (window.ASRSettings && window.ASRSettings.load()) || { provider: 'browser' };
+  }
+
+  function getAISettings() {
+    return (window.AISettings && window.AISettings.load()) || { enabled: false };
   }
 
   async function startRecognition() {
@@ -37,6 +45,10 @@
           active.updatedAt = Date.now();
           renderActive();
           scrollTranscript();
+          // 通知 AI 分析引擎有新转写
+          if (analysisEngine) {
+            analysisEngine.notifyNewTranscript();
+          }
         },
         onError: (err) => {
           showToast('语音识别出错：' + err.message);
@@ -64,6 +76,198 @@
     }
   }
 
+  function startAIAnalysis() {
+    if (analysisEngine) return;
+    const aiSettings = getAISettings();
+    if (!aiSettings.enabled || !aiSettings.apiKey) return;
+    try {
+      aiProvider = window.AIProvider.create(aiSettings);
+      analysisEngine = new window.MeetingAnalysisEngine(active, aiProvider, aiSettings);
+      analysisEngine.on('analysis-updated', ({ analysis, tokenUsage }) => {
+        renderAIPanels(analysis, tokenUsage);
+        saveAnalysis(analysis);
+      });
+      analysisEngine.on('analyzing', () => {
+        const indicator = root.querySelector('#aiAnalyzing');
+        if (indicator) indicator.hidden = false;
+      });
+      analysisEngine.on('analysis-error', (err) => {
+        const indicator = root.querySelector('#aiAnalyzing');
+        if (indicator) indicator.hidden = true;
+        console.error('AI analysis error:', err);
+      });
+      analysisEngine.on('token-limit', () => {
+        showToast('Token 已达上限，分析已暂停');
+      });
+      analysisEngine.start();
+    } catch (e) {
+      console.error('Failed to start AI analysis:', e);
+      analysisEngine = null;
+      aiProvider = null;
+    }
+  }
+
+  function stopAIAnalysis() {
+    if (analysisEngine) {
+      analysisEngine.stop();
+      analysisEngine = null;
+      aiProvider = null;
+    }
+  }
+
+  function saveAnalysis(analysis) {
+    if (!active) return;
+    active.analysis = analysis;
+    active.updatedAt = Date.now();
+    update(items => items.map(m => m.id === active.id ? { ...m, ...active } : m));
+  }
+
+  function renderAIPanels(analysis, tokenUsage) {
+    const indicator = root.querySelector('#aiAnalyzing');
+    if (indicator) indicator.hidden = true;
+
+    // 渲染要点面板
+    const keyPointsEl = root.querySelector('#aiKeyPoints');
+    if (keyPointsEl && analysis.keyPoints) {
+      keyPointsEl.innerHTML = analysis.keyPoints.length ? analysis.keyPoints.map((kp, i) => `
+        <div class="ai-keypoint-item">
+          <div class="ai-keypoint-content">${i + 1}. ${esc(kp.content)}</div>
+          <div class="ai-keypoint-meta">${esc(kp.speaker)} · ${formatDuration(kp.timestamp)} · ${Math.round(kp.confidence * 100)}%</div>
+        </div>
+      `).join('') : '<div class="ws-muted">暂无要点</div>';
+    }
+
+    // 渲染上次更新时间
+    const lastUpdateEl = root.querySelector('#aiLastUpdate');
+    if (lastUpdateEl && analysis.lastAnalysisAt) {
+      lastUpdateEl.textContent = `上次更新: ${new Date(analysis.lastAnalysisAt).toLocaleTimeString('zh-CN')}`;
+    }
+
+    // 渲染观点分析面板
+    const viewpointsEl = root.querySelector('#aiViewpoints');
+    if (viewpointsEl && analysis.viewpoints) {
+      const viewpoints = analysis.viewpoints;
+      const latest = viewpoints[viewpoints.length - 1];
+      const history = viewpoints.slice(0, -1);
+
+      let html = '';
+      if (latest) {
+        html += renderViewpointCard(latest);
+      }
+      if (history.length > 0) {
+        html += `<div class="ai-history-section"><h4>历史观点</h4>`;
+        html += history.reverse().map(vp => `
+          <details class="ai-history-item">
+            <summary>${esc(vp.speaker)}: "${esc(vp.originalText.slice(0, 30))}${vp.originalText.length > 30 ? '...' : ''}"</summary>
+            ${renderViewpointDetail(vp)}
+          </details>
+        `).join('');
+        html += `</div>`;
+      }
+      viewpointsEl.innerHTML = html || '<div class="ws-muted">暂无观点分析</div>';
+
+      // 绑定复制按钮
+      viewpointsEl.querySelectorAll('.ai-copy-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          navigator.clipboard.writeText(btn.dataset.text).then(() => {
+            btn.textContent = '已复制';
+            setTimeout(() => { btn.textContent = '复制'; }, 1500);
+          });
+        });
+      });
+
+      // 绑定反馈按钮
+      viewpointsEl.querySelectorAll('.ai-feedback-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const vpId = btn.dataset.vpId;
+          const feedback = btn.dataset.feedback;
+          if (analysis.viewpoints) {
+            const vp = analysis.viewpoints.find(v => v.id === vpId);
+            if (vp) vp.feedback = feedback;
+            saveAnalysis(analysis);
+          }
+          showToast('感谢反馈');
+        });
+      });
+
+      // 绑定漏洞展开
+      viewpointsEl.querySelectorAll('.ai-flaw-toggle').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const detail = btn.nextElementSibling;
+          if (detail) detail.hidden = !detail.hidden;
+        });
+      });
+    }
+
+    // 渲染 token 统计
+    const tokenEl = root.querySelector('#aiTokenUsage');
+    if (tokenEl && tokenUsage) {
+      const total = tokenUsage.prompt + tokenUsage.completion;
+      const cost = analysisEngine ? analysisEngine.estimateCost() : 0;
+      tokenEl.textContent = `已用: ${total.toLocaleString()} tokens · ¥${cost.toFixed(4)}`;
+    }
+  }
+
+  function renderViewpointCard(vp) {
+    return `
+      <div class="ai-viewpoint-card">
+        <div class="ai-viewpoint-header">
+          <div class="ai-viewpoint-text">"${esc(vp.originalText)}"</div>
+          <div class="ai-viewpoint-meta">${esc(vp.speaker)} · ${formatDuration(vp.timestamp)}</div>
+        </div>
+        ${renderViewpointDetail(vp)}
+        <div class="ai-feedback-row">
+          <button class="ws-btn ai-feedback-btn" data-vp-id="${esc(vp.id)}" data-feedback="useful">有用</button>
+          <button class="ws-btn ai-feedback-btn" data-vp-id="${esc(vp.id)}" data-feedback="wrong">有误</button>
+          <button class="ws-btn ai-feedback-btn" data-vp-id="${esc(vp.id)}" data-feedback="ignore">忽略</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderViewpointDetail(vp) {
+    let html = '';
+    if (vp.surface) {
+      html += `<div class="ai-analysis-section"><div class="ai-analysis-label">表面含义</div><div>${esc(vp.surface)}</div></div>`;
+    }
+    if (vp.hidden) {
+      html += `<div class="ai-analysis-section"><div class="ai-analysis-label">隐含意思</div><div>${esc(vp.hidden)}</div></div>`;
+    }
+    if (vp.flaws && vp.flaws.length > 0) {
+      html += `<div class="ai-analysis-section"><div class="ai-analysis-label">逻辑漏洞 (${vp.flaws.length})</div>`;
+      vp.flaws.forEach(f => {
+        html += `
+          <div class="ai-flaw-item">
+            <div class="ai-flaw-header">
+              <span class="ai-flaw-type">${esc(f.type)}</span>
+              <button class="ai-flaw-toggle ws-btn">展开证据</button>
+            </div>
+            <div class="ai-flaw-desc">${esc(f.description)}</div>
+            <div class="ai-flaw-evidence" hidden>
+              ${f.evidence ? `<div class="ai-evidence-text">${esc(f.evidence)}</div>` : ''}
+              ${f.suggestion ? `<div class="ai-suggestion-text">建议追问: ${esc(f.suggestion)}</div>` : ''}
+            </div>
+          </div>
+        `;
+      });
+      html += `</div>`;
+    }
+    if (vp.responses && vp.responses.length > 0) {
+      html += `<div class="ai-analysis-section"><div class="ai-analysis-label">应对话术 (${vp.responses.length})</div>`;
+      vp.responses.forEach(r => {
+        html += `
+          <div class="ai-response-item">
+            <div class="ai-response-style">${esc(r.style)}</div>
+            <div class="ai-response-text">"${esc(r.text)}"</div>
+            <button class="ws-btn ai-copy-btn" data-text="${esc(r.text)}">复制</button>
+          </div>
+        `;
+      });
+      html += `</div>`;
+    }
+    return html;
+  }
+
   function scrollTranscript() {
     const list = root.querySelector('#transcriptList');
     if (list) list.scrollTop = list.scrollHeight;
@@ -78,6 +282,34 @@
     lines.push(`参与人：${m.participants.join(', ')}`);
     lines.push('');
 
+    if (m.analysis && m.analysis.keyPoints && m.analysis.keyPoints.length) {
+      lines.push('═══ AI 要点总结 ═══');
+      m.analysis.keyPoints.forEach(kp => {
+        lines.push(`• ${kp.content} (${kp.speaker})`);
+      });
+      lines.push('');
+    }
+    if (m.analysis && m.analysis.viewpoints && m.analysis.viewpoints.length) {
+      lines.push('═══ AI 观点分析 ═══');
+      m.analysis.viewpoints.forEach(vp => {
+        lines.push(`观点: "${vp.originalText}" (${vp.speaker})`);
+        lines.push(`  表面: ${vp.surface}`);
+        lines.push(`  隐含: ${vp.hidden}`);
+        if (vp.flaws && vp.flaws.length) {
+          lines.push('  漏洞:');
+          vp.flaws.forEach(f => {
+            lines.push(`    ⚠️ ${f.type}: ${f.description}`);
+          });
+        }
+        if (vp.responses && vp.responses.length) {
+          lines.push('  话术:');
+          vp.responses.forEach(r => {
+            lines.push(`    💬 ${r.style}: ${r.text}`);
+          });
+        }
+        lines.push('');
+      });
+    }
     if (m.summary.length) {
       lines.push('═══ 会议摘要 ═══');
       m.summary.forEach(s => lines.push(`• ${s}`));
@@ -109,6 +341,40 @@
     lines.push(`- **参与人**：${m.participants.join(', ')}`);
     lines.push('');
 
+    if (m.analysis && m.analysis.keyPoints && m.analysis.keyPoints.length) {
+      lines.push('## AI 要点总结');
+      lines.push('');
+      m.analysis.keyPoints.forEach(kp => {
+        lines.push(`- ${kp.content} (${kp.speaker})`);
+      });
+      lines.push('');
+    }
+    if (m.analysis && m.analysis.viewpoints && m.analysis.viewpoints.length) {
+      lines.push('## AI 观点分析');
+      lines.push('');
+      m.analysis.viewpoints.forEach(vp => {
+        lines.push(`### 观点: "${vp.originalText}" (${vp.speaker})`);
+        lines.push('');
+        lines.push(`**表面含义**: ${vp.surface}`);
+        lines.push('');
+        lines.push(`**隐含意思**: ${vp.hidden}`);
+        lines.push('');
+        if (vp.flaws && vp.flaws.length) {
+          lines.push('**逻辑漏洞**:');
+          vp.flaws.forEach(f => {
+            lines.push(`- ⚠️ ${f.type}: ${f.description}`);
+          });
+          lines.push('');
+        }
+        if (vp.responses && vp.responses.length) {
+          lines.push('**应对话术**:');
+          vp.responses.forEach(r => {
+            lines.push(`- 💬 ${r.style}: ${r.text}`);
+          });
+          lines.push('');
+        }
+      });
+    }
     if (m.summary.length) {
       lines.push('## 会议摘要');
       lines.push('');
@@ -267,12 +533,14 @@
     renderActive();
     startTimer();
     startRecognition();
+    startAIAnalysis();
   }
 
   function endMeeting() {
     if (!active) return;
     stopTimer();
     stopRecognition();
+    stopAIAnalysis();
     active.status = 'ended';
     active.duration = elapsed;
     active.updatedAt = Date.now();
@@ -297,6 +565,10 @@
     root.querySelector('#transcriptText').value = '';
     renderActive();
     scrollTranscript();
+    // 通知 AI 分析引擎
+    if (analysisEngine) {
+      analysisEngine.notifyNewTranscript();
+    }
   }
 
   function addSummary() {
@@ -383,7 +655,7 @@
     const asrSettings = getASRSettings();
     const hasASR = asrSettings.provider === 'browser' ? !!(window.SpeechRecognition || window.webkitSpeechRecognition) : true;
     const providerName = asrSettings.provider === 'browser' ? 'Web Speech API' : (window.ASRProvider?.getProviders?.()?.find(p => p.id === asrSettings.provider)?.name || asrSettings.provider);
-    root.innerHTML = `<div class="ws-page-heading"><span class="ws-heading-icon">${icon('mic')}</span><div><h1>会议实时转写</h1><p>实时转写 · 自动摘要 · 行动项</p></div><div class="ws-page-heading-actions"><button class="ws-btn" data-m-action="asr-settings">${icon('settings')}ASR 设置</button><button class="ws-btn primary" data-m-action="create">${icon('plus')}新建会议</button></div></div>
+    root.innerHTML = `<div class="ws-page-heading"><span class="ws-heading-icon">${icon('mic')}</span><div><h1>会议实时转写</h1><p>实时转写 · AI 分析 · 行动项</p></div><div class="ws-page-heading-actions"><button class="ws-btn" data-m-action="asr-settings">${icon('settings')}ASR 设置</button><button class="ws-btn" data-m-action="ai-settings">${icon('settings')}AI 设置</button><button class="ws-btn primary" data-m-action="create">${icon('plus')}新建会议</button></div></div>
       <div id="meetingEmpty" class="ws-empty ws-panel">${icon('mic')}<h2>让每一次会议都有价值</h2><p>会议记录、关键结论和行动项，在这里有序归档。</p><span class="ws-badge">当前引擎：${esc(providerName)}</span></div>
       <div id="meetingActive" hidden>
         <div class="meeting-header">
@@ -397,7 +669,7 @@
             <button class="ws-btn danger" data-m-action="end">${icon('stop')}结束会议</button>
           </div>
         </div>
-        <div class="meeting-columns">
+        <div class="meeting-columns meeting-columns-3">
           <section class="meeting-column">
             <h3>${icon('note')}实时转写</h3>
             <div class="transcript-input">
@@ -407,24 +679,27 @@
             </div>
             <div id="transcriptList" class="transcript-list"></div>
           </section>
-          <aside class="meeting-column">
-            <h3>${icon('spark')}AI 会议助手</h3>
-            <div class="assistant-section">
-              <h4>实时摘要</h4>
-              <div class="assistant-input"><input type="text" id="summaryInput" placeholder="添加摘要…"><button class="ws-btn" data-m-action="add-summary">${icon('plus')}</button></div>
-              <ul id="summaryList"></ul>
+          <section class="meeting-column">
+            <h3>${icon('spark')}AI 要点总结</h3>
+            <div id="aiAnalyzing" class="ai-analyzing-indicator" hidden>
+              <span class="ai-analyzing-dot"></span>
+              <span>分析中...</span>
             </div>
-            <div class="assistant-section">
-              <h4>关键结论</h4>
-              <div class="assistant-input"><input type="text" id="keyPointInput" placeholder="添加关键结论…"><button class="ws-btn" data-m-action="add-keypoint">${icon('plus')}</button></div>
-              <ul id="keyPointsList"></ul>
+            <div id="aiKeyPoints" class="ai-keypoints-list">
+              <div class="ws-muted">会议开始后，AI 会自动提炼关键要点</div>
             </div>
-            <div class="assistant-section">
-              <h4>Action Items</h4>
-              <div class="assistant-input"><input type="text" id="actionItemInput" placeholder="添加行动项…"><button class="ws-btn" data-m-action="add-action">${icon('plus')}</button></div>
-              <ul id="actionItemsList"></ul>
+            <div class="ai-panel-footer">
+              <span id="aiLastUpdate" class="ai-last-update"></span>
+              <button class="ws-btn" data-m-action="ai-refresh">刷新</button>
             </div>
-          </aside>
+          </section>
+          <section class="meeting-column">
+            <h3>${icon('search')}观点分析</h3>
+            <div id="aiTokenUsage" class="ai-token-usage"></div>
+            <div id="aiViewpoints" class="ai-viewpoints-list">
+              <div class="ws-muted">当检测到重要观点时，AI 会自动分析</div>
+            </div>
+          </section>
         </div>
       </div>
       <div class="meeting-history">
@@ -439,6 +714,14 @@
       const meeting = meetings.find(m => m.id === button.closest('[data-m-id]')?.dataset.mId);
       if (action === 'asr-settings') {
         if (window.ASRSettings) window.ASRSettings.openDialog();
+      }
+      if (action === 'ai-settings') {
+        if (window.AISettings) window.AISettings.openDialog();
+      }
+      if (action === 'ai-refresh') {
+        if (analysisEngine) {
+          analysisEngine.runAnalysis();
+        }
       }
       if (action === 'create') {
         W.openDialog(`<div class="ws-dialog-head"><div><h2 id="wsDialogTitle">新建会议</h2><p>${hasASR ? '将自动启动麦克风进行语音识别' : '手动记录模式'}</p></div><button type="button" class="ws-icon-btn" data-ws-close aria-label="关闭">${icon('close')}</button></div>
@@ -498,6 +781,7 @@
         update(items => items.map(m => m.id === active.id ? { ...m, ...active } : m));
       }
       stopRecognition();
+      stopAIAnalysis();
     });
     renderList();
   }

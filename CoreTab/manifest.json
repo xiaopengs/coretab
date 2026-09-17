@@ -22,5 +22,5 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "host_permissions": ["https://api.github.com/*", "https://www.google.com/*", "https://*.gstatic.com/*", "wss://openspeech.bytedance.com/*", "https://openspeech.bytedance.com/*", "wss://asr.cloud.tencent.com/*", "https://asr.api.tencentcloud.com/*", "wss://nls-gateway.cn-shanghai.aliyuncs.com/*", "https://nls-meta.cn-shanghai.aliyuncs.com/*"]
+  "host_permissions": ["https://api.github.com/*", "https://www.google.com/*", "https://*.gstatic.com/*", "wss://openspeech.bytedance.com/*", "https://openspeech.bytedance.com/*", "wss://asr.cloud.tencent.com/*", "https://asr.api.tencentcloud.com/*", "wss://nls-gateway.cn-shanghai.aliyuncs.com/*", "https://nls-meta.cn-shanghai.aliyuncs.com/*", "https://api.deepseek.com/*", "https://api.moonshot.cn/*", "https://open.bigmodel.cn/*"]
 }

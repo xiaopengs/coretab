@@ -55,7 +55,7 @@ test('声明 history 权限', manifest.permissions?.includes('history'));
 test('host_permissions 包含 GitHub API', manifest.host_permissions?.includes('https://api.github.com/*'));
 test('host_permissions 包含 Google favicon 服务（coretab-favicon-cache.js 依赖）', manifest.host_permissions?.includes('https://www.google.com/*'));
 test('host_permissions 包含 gstatic 重定向域（解决 favicon CORS 重定向问题）', manifest.host_permissions?.some(p => p.includes('gstatic.com')));
-test('host_permissions 数量明确（<= 12 个，含 ASR WebSocket 权限）', Array.isArray(manifest.host_permissions) && manifest.host_permissions.length <= 12);
+test('host_permissions 数量明确（<= 15 个，含 ASR WebSocket 和 LLM API 权限）', Array.isArray(manifest.host_permissions) && manifest.host_permissions.length <= 15);
 test('不再申请 <all_urls> 权限', !JSON.stringify(manifest.host_permissions || []).includes('<all_urls>'));
 
 console.log('\n--- index.html / JS 拆分测试 ---\n');
@@ -149,9 +149,45 @@ for (const file of jsFiles) {
 for (const file of ['asr-provider.js', 'asr-browser.js', 'asr-volcengine.js', 'asr-tencent.js', 'asr-alicloud.js', 'asr-settings.js']) {
   checkSyntax(`js/asr/${file}`);
 }
+for (const file of ['ai-provider.js', 'ai-deepseek.js', 'ai-kimi.js', 'ai-zhipu.js', 'ai-settings.js', 'trigger-controller.js', 'incremental-analyzer.js', 'result-handler.js', 'meeting-analysis-engine.js']) {
+  checkSyntax(`js/ai/${file}`);
+}
 checkSyntax('js/coretab-workspaces.js');
 checkSyntax('js/coretab-prompts.js');
 checkSyntax('js/coretab-meetings.js');
+
+console.log('\n--- AI 模块测试 ---\n');
+
+const aiProviderJs = fs.readFileSync(path.join(jsRoot, 'ai/ai-provider.js'), 'utf8');
+const aiSettingsJs = fs.readFileSync(path.join(jsRoot, 'ai/ai-settings.js'), 'utf8');
+const meetingAnalysisEngineJs = fs.readFileSync(path.join(jsRoot, 'ai/meeting-analysis-engine.js'), 'utf8');
+const incrementalAnalyzerJs = fs.readFileSync(path.join(jsRoot, 'ai/incremental-analyzer.js'), 'utf8');
+const resultHandlerJs = fs.readFileSync(path.join(jsRoot, 'ai/result-handler.js'), 'utf8');
+const triggerControllerJs = fs.readFileSync(path.join(jsRoot, 'ai/trigger-controller.js'), 'utf8');
+
+test('AI Provider 支持 DeepSeek', aiProviderJs.includes('deepseek'));
+test('AI Provider 支持 Kimi', aiProviderJs.includes('kimi'));
+test('AI Provider 支持智谱 AI', aiProviderJs.includes('zhipu'));
+test('AI Provider 提供工厂方法', aiProviderJs.includes('static create'));
+test('AI Provider 提供服务商列表', aiProviderJs.includes('getProviders'));
+test('AI Settings 使用 localStorage', aiSettingsJs.includes('localStorage'));
+test('AI Settings 提供默认配置', aiSettingsJs.includes('getDefault'));
+test('AI Settings 提供设置对话框', aiSettingsJs.includes('openDialog'));
+test('MeetingAnalysisEngine 支持事件监听', meetingAnalysisEngineJs.includes('on(event'));
+test('MeetingAnalysisEngine 支持启动/停止', meetingAnalysisEngineJs.includes('start()') && meetingAnalysisEngineJs.includes('stop()'));
+test('MeetingAnalysisEngine 支持增量分析', meetingAnalysisEngineJs.includes('runAnalysis'));
+test('MeetingAnalysisEngine 支持 Token 统计', meetingAnalysisEngineJs.includes('tokenUsage'));
+test('IncrementalAnalyzer 构建上下文', incrementalAnalyzerJs.includes('buildContext'));
+test('IncrementalAnalyzer 支持要点去重', incrementalAnalyzerJs.includes('mergeKeyPoints'));
+test('IncrementalAnalyzer 计算相似度', incrementalAnalyzerJs.includes('calculateSimilarity'));
+test('ResultHandler 解析 JSON', resultHandlerJs.includes('parse(content)'));
+test('ResultHandler 验证漏洞类型', resultHandlerJs.includes('validateFlawType'));
+test('ResultHandler 验证话术风格', resultHandlerJs.includes('validateResponseStyle'));
+test('TriggerController 支持防抖', triggerControllerJs.includes('debounce'));
+test('TriggerController 支持条件触发', triggerControllerJs.includes('check()'));
+test('Meetings 集成 AI 分析引擎', fs.readFileSync(path.join(jsRoot, 'coretab-meetings.js'), 'utf8').includes('analysisEngine'));
+test('HTML 加载 AI 模块', html.includes('js/ai/ai-provider.js') && html.includes('js/ai/meeting-analysis-engine.js'));
+test('Manifest 包含 LLM API 权限', manifest.host_permissions?.includes('https://api.deepseek.com/*') && manifest.host_permissions?.includes('https://api.moonshot.cn/*') && manifest.host_permissions?.includes('https://open.bigmodel.cn/*'));
 
 console.log('\n========================================');
 console.log(`  测试结果: ${passed} 通过, ${failed} 失败`);
