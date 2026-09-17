@@ -253,3 +253,110 @@ async function openQuickNavListModal() {
     link => quickNavCardTemplate(link, 'quick-nav-list-card')
   );
 }
+
+// ============================================================
+// IMPORT / EXPORT — 常用网站导航导入导出
+// ============================================================
+
+async function exportQuickNav() {
+  try {
+    const links = await getQuickNavLinks();
+    const exportData = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      count: links.length,
+      links: links.map(link => ({
+        title: link.title || '',
+        url: link.url || ''
+      }))
+    };
+    
+    const json = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `coretab-navigation-${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    showToast(`已导出 ${links.length} 个网站`);
+  } catch (err) {
+    console.error('Export failed:', err);
+    showToast('导出失败');
+  }
+}
+
+async function importQuickNav() {
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json,.json';
+    
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) {
+        resolve();
+        return;
+      }
+      
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+        
+        // 验证格式
+        if (!data.links || !Array.isArray(data.links)) {
+          throw new Error('Invalid format: missing links array');
+        }
+        
+        const existingLinks = await getQuickNavLinks();
+        const existingUrls = new Set(existingLinks.map(l => l.url));
+        
+        let addedCount = 0;
+        let skippedCount = 0;
+        
+        for (const item of data.links) {
+          if (!item.url) continue;
+          
+          const normalizedUrl = normalizeQuickNavUrl(item.url);
+          if (!normalizedUrl) continue;
+          
+          if (existingUrls.has(normalizedUrl)) {
+            skippedCount++;
+            continue;
+          }
+          
+          existingLinks.push({
+            id: createQuickNavId(),
+            title: item.title || getQuickNavDomain(normalizedUrl) || 'Untitled',
+            url: normalizedUrl,
+            createdAt: Date.now()
+          });
+          
+          existingUrls.add(normalizedUrl);
+          addedCount++;
+        }
+        
+        await saveQuickNavLinks(existingLinks);
+        await loadQuickNav();
+        
+        let message = `已导入 ${addedCount} 个网站`;
+        if (skippedCount > 0) {
+          message += `，跳过 ${skippedCount} 个重复项`;
+        }
+        showToast(message);
+        
+      } catch (err) {
+        console.error('Import failed:', err);
+        showToast('导入失败：文件格式错误');
+      }
+      
+      resolve();
+    };
+    
+    input.click();
+  });
+}

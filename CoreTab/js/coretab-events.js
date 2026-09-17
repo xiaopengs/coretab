@@ -135,6 +135,18 @@ document.addEventListener('click', async (e) => {
     return;
   }
 
+  if (action === 'export-quick-nav') {
+    e.stopPropagation();
+    await exportQuickNav();
+    return;
+  }
+
+  if (action === 'import-quick-nav') {
+    e.stopPropagation();
+    await importQuickNav();
+    return;
+  }
+
   if (action === 'edit-quick-nav') {
     e.stopPropagation();
     await editQuickNavLink(actionEl.dataset.id);
