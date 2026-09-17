@@ -499,9 +499,12 @@
         <div class="transcript-text">${esc(t.text)}</div>
       </div>
     `).join('');
-    root.querySelector('#summaryList').innerHTML = active.summary.map(s => `<li>${esc(s)}</li>`).join('') || '<li class="ws-muted">暂无摘要，会议进行中会自动生成。</li>';
-    root.querySelector('#keyPointsList').innerHTML = active.keyPoints.map(p => `<li>${esc(p)}</li>`).join('') || '<li class="ws-muted">暂无关键结论。</li>';
-    root.querySelector('#actionItemsList').innerHTML = active.actionItems.map((a, i) => `
+    const summaryList = root.querySelector('#summaryList');
+    if (summaryList) summaryList.innerHTML = active.summary.map(s => `<li>${esc(s)}</li>`).join('') || '<li class="ws-muted">暂无摘要，会议进行中会自动生成。</li>';
+    const keyPointsList = root.querySelector('#keyPointsList');
+    if (keyPointsList) keyPointsList.innerHTML = active.keyPoints.map(p => `<li>${esc(p)}</li>`).join('') || '<li class="ws-muted">暂无关键结论。</li>';
+    const actionItemsList = root.querySelector('#actionItemsList');
+    if (actionItemsList) actionItemsList.innerHTML = active.actionItems.map((a, i) => `
       <li class="action-item ${a.completed ? 'completed' : ''}">
         <input type="checkbox" data-a-index="${i}" ${a.completed ? 'checked' : ''}>
         <span>${esc(a.content)}</span>
