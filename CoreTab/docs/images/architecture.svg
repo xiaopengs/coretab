@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" style="background: #faf8f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
+  <!-- Title -->
+  <text x="400" y="35" text-anchor="middle" font-size="20" font-weight="600" fill="#2d3748">CoreTab 系统架构</text>
+  
+  <!-- Content Scripts Layer -->
+  <rect x="50" y="60" width="700" height="180" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="2"/>
+  <text x="70" y="85" font-size="14" font-weight="600" fill="#4a5568">Content Scripts (Extension Page)</text>
+  
+  <!-- Tabs Workspace -->
+  <rect x="70" y="100" width="200" height="120" rx="8" fill="#e6fffa" stroke="#38b2ac" stroke-width="2"/>
+  <text x="170" y="125" text-anchor="middle" font-size="13" font-weight="600" fill="#234e52">Tabs 工作台</text>
+  <text x="170" y="145" text-anchor="middle" font-size="11" fill="#4a5568">Open/Closed Tabs</text>
+  <text x="170" y="162" text-anchor="middle" font-size="11" fill="#4a5568">Recent Tabs</text>
+  <text x="170" y="179" text-anchor="middle" font-size="11" fill="#4a5568">History &amp; Trending</text>
+  <text x="170" y="205" text-anchor="middle" font-size="10" fill="#718096" font-style="italic">coretab-*.js</text>
+  
+  <!-- Prompts Workspace -->
+  <rect x="300" y="100" width="200" height="120" rx="8" fill="#fef5e7" stroke="#f6ad55" stroke-width="2"/>
+  <text x="400" y="125" text-anchor="middle" font-size="13" font-weight="600" fill="#744210">Prompts 工作台</text>
+  <text x="400" y="145" text-anchor="middle" font-size="11" fill="#4a5568">模板管理</text>
+  <text x="400" y="162" text-anchor="middle" font-size="11" fill="#4a5568">变量替换</text>
+  <text x="400" y="179" text-anchor="middle" font-size="11" fill="#4a5568">收藏 &amp; 分类</text>
+  <text x="400" y="205" text-anchor="middle" font-size="10" fill="#718096" font-style="italic">coretab-prompts.js</text>
+  
+  <!-- Meetings Workspace -->
+  <rect x="530" y="100" width="200" height="120" rx="8" fill="#fce7f3" stroke="#ed64a6" stroke-width="2"/>
+  <text x="630" y="125" text-anchor="middle" font-size="13" font-weight="600" fill="#702459">Meetings 工作台</text>
+  <text x="630" y="145" text-anchor="middle" font-size="11" fill="#4a5568">实时录音转写</text>
+  <text x="630" y="162" text-anchor="middle" font-size="11" fill="#4a5568">智能摘要</text>
+  <text x="630" y="179" text-anchor="middle" font-size="11" fill="#4a5568">导出分享</text>
+  <text x="630" y="205" text-anchor="middle" font-size="10" fill="#718096" font-style="italic">coretab-meetings.js</text>
+  
+  <!-- Arrow down -->
+  <path d="M 400 245 L 400 275" stroke="#a0aec0" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- Background Service Worker -->
+  <rect x="50" y="280" width="700" height="120" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="2"/>
+  <text x="70" y="305" font-size="14" font-weight="600" fill="#4a5568">Background Service Worker</text>
+  
+  <rect x="70" y="320" width="200" height="60" rx="8" fill="#ebf8ff" stroke="#4299e1" stroke-width="2"/>
+  <text x="170" y="345" text-anchor="middle" font-size="12" font-weight="500" fill="#2c5282">Badge 更新</text>
+  <text x="170" y="365" text-anchor="middle" font-size="10" fill="#4a5568">background.js</text>
+  
+  <rect x="300" y="320" width="200" height="60" rx="8" fill="#ebf8ff" stroke="#4299e1" stroke-width="2"/>
+  <text x="400" y="345" text-anchor="middle" font-size="12" font-weight="500" fill="#2c5282">Recent Tabs 追踪</text>
+  <text x="400" y="365" text-anchor="middle" font-size="10" fill="#4a5568">chrome.tabs.onUpdated</text>
+  
+  <rect x="530" y="320" width="200" height="60" rx="8" fill="#ebf8ff" stroke="#4299e1" stroke-width="2"/>
+  <text x="630" y="345" text-anchor="middle" font-size="12" font-weight="500" fill="#2c5282">历史回填</text>
+  <text x="630" y="365" text-anchor="middle" font-size="10" fill="#4a5568">chrome.history API</text>
+  
+  <!-- Arrow down -->
+  <path d="M 400 405 L 400 435" stroke="#a0aec0" stroke-width="2" marker-end="url(#arrowhead)"/>
+  
+  <!-- Storage Layer -->
+  <rect x="50" y="440" width="700" height="120" rx="12" fill="#ffffff" stroke="#e2e8f0" stroke-width="2"/>
+  <text x="70" y="465" font-size="14" font-weight="600" fill="#4a5568">Storage Layer</text>
+  
+  <rect x="70" y="480" width="320" height="60" rx="8" fill="#f0fff4" stroke="#48bb78" stroke-width="2"/>
+  <text x="230" y="505" text-anchor="middle" font-size="12" font-weight="500" fill="#22543d">chrome.storage.local</text>
+  <text x="230" y="525" text-anchor="middle" font-size="10" fill="#4a5568">Closed Tabs, Recent Tabs, 配置 (10MB)</text>
+  
+  <rect x="420" y="480" width="310" height="60" rx="8" fill="#f0fff4" stroke="#48bb78" stroke-width="2"/>
+  <text x="575" y="505" text-anchor="middle" font-size="12" font-weight="500" fill="#22543d">localStorage</text>
+  <text x="575" y="525" text-anchor="middle" font-size="10" fill="#4a5568">Prompts, Meetings, 会话状态 (5MB)</text>
+  
+  <!-- Arrow marker definition -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#a0aec0"/>
+    </marker>
+  </defs>
+  
+  <!-- Footer -->
+  <text x="400" y="585" text-anchor="middle" font-size="11" fill="#a0aec0">零依赖 · Manifest V3 · 本地优先</text>
+</svg>
