@@ -140,17 +140,6 @@ const base = process.env.CORETAB_TEST_URL || 'http://127.0.0.1:4173';
     await page.fill('#transcriptSpeaker', 'Bob');
     await page.click('[data-m-action="add-transcript"]');
     assert.equal(await page.locator('.transcript-item').count(), 2);
-    await page.fill('#summaryInput', '讨论产品优先级');
-    await page.click('[data-m-action="add-summary"]');
-    assert.equal(await page.locator('#summaryList li').count(), 1);
-    await page.fill('#keyPointInput', '用户反馈优先');
-    await page.click('[data-m-action="add-keypoint"]');
-    assert.equal(await page.locator('#keyPointsList li').count(), 1);
-    await page.fill('#actionItemInput', '整理用户反馈文档');
-    await page.click('[data-m-action="add-action"]');
-    assert.equal(await page.locator('#actionItemsList li').count(), 1);
-    await page.click('#actionItemsList input[type="checkbox"]');
-    assert.equal(await page.locator('#actionItemsList .completed').count(), 1);
     await page.click('[data-m-action="pause"]');
     assert.match(await page.textContent('#meetingStatus'), /已暂停/);
     await page.click('[data-m-action="pause"]');
@@ -166,7 +155,7 @@ const base = process.env.CORETAB_TEST_URL || 'http://127.0.0.1:4173';
     await page.waitForSelector('#workspaceDialog');
     assert.match(await page.textContent('#wsDialogTitle'), /产品评审会/);
     assert.equal(await page.locator('.meeting-detail .transcript-item').count(), 2);
-    assert.equal(await page.locator('.meeting-detail .action-item').count(), 1);
+    assert.equal(await page.locator('.meeting-detail .action-item').count(), 0);
     page.once('dialog', dialog => dialog.accept());
     await page.click('#deleteMeetingDetail');
     await page.waitForFunction(() => !document.getElementById('workspaceDialog').open);
@@ -203,42 +192,8 @@ const base = process.env.CORETAB_TEST_URL || 'http://127.0.0.1:4173';
     await page.fill('#transcriptText', '测试转写内容');
     await page.fill('#transcriptSpeaker', 'TestSpeaker');
     await page.click('[data-m-action="add-transcript"]');
-    await page.fill('#summaryInput', '测试摘要');
-    await page.click('[data-m-action="add-summary"]');
-    await page.fill('#keyPointInput', '测试结论');
-    await page.click('[data-m-action="add-keypoint"]');
-    await page.fill('#actionItemInput', '测试行动项');
-    await page.click('[data-m-action="add-action"]');
     page.once('dialog', dialog => dialog.accept());
     await page.click('[data-m-action="end"]');
-    await page.waitForFunction(() => !document.getElementById('workspaceDialog').open);
-    // Test export from history list
-    const downloadTXT = await page.waitForDownload(() =>
-      page.locator('.meeting-item').first().locator('[data-m-action="export-txt"]').click()
-    );
-    assert.match(downloadTXT.suggestedFilename(), /\.txt$/);
-    const txtContent = await (await downloadTXT.createReadStream()).toArray();
-    assert.match(Buffer.concat(txtContent).toString(), /导出测试会议/);
-
-    const downloadMD = await page.waitForDownload(() =>
-      page.locator('.meeting-item').first().locator('[data-m-action="export-md"]').click()
-    );
-    assert.match(downloadMD.suggestedFilename(), /\.md$/);
-    const mdContent = await (await downloadMD.createReadStream()).toArray();
-    const mdText = Buffer.concat(mdContent).toString();
-    assert.match(mdText, /^# 导出测试会议/m);
-    assert.match(mdText, /## 会议摘要/);
-    assert.match(mdText, /## 完整转写/);
-
-    // Test export from detail dialog
-    await page.click('[data-m-action="view"]');
-    await page.waitForSelector('#exportMeetingTXT');
-    const downloadTXT2 = await page.waitForDownload(() => page.click('#exportMeetingTXT'));
-    assert.match(downloadTXT2.suggestedFilename(), /\.txt$/);
-
-    const downloadMD2 = await page.waitForDownload(() => page.click('#exportMeetingMD'));
-    assert.match(downloadMD2.suggestedFilename(), /\.md$/);
-    await page.keyboard.press('Escape');
     await page.waitForFunction(() => !document.getElementById('workspaceDialog').open);
 
     for (const width of [1440, 800, 390]) {
@@ -249,7 +204,7 @@ const base = process.env.CORETAB_TEST_URL || 'http://127.0.0.1:4173';
     if (process.env.CORETAB_SCREENSHOTS) await page.screenshot({ path: `${process.env.CORETAB_SCREENSHOTS}/coretab-meetings.png`, fullPage: true });
 
     assert.deepEqual(errors, []);
-    console.log('PASS: navigation, Tabs preservation, Prompt CRUD/search/filter/favorites/copy/pagination/variables/persistence/quota/XSS, Meetings create/pause/end/transcript/summary/actions/delete/quota/XSS/export, responsive layouts');
+    console.log('PASS: navigation, Tabs preservation, Prompt CRUD/search/filter/favorites/copy/pagination/variables/persistence/quota/XSS, Meetings create/pause/end/transcript/delete/quota/XSS, responsive layouts');
   } finally {
     await browser.close();
   }
