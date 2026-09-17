@@ -13,60 +13,54 @@
   let elapsed = 0;
   let pausedAt = null;
 
-  /* ── Web Speech API (ASR) ── */
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  let recognition = null;
+  /* ── ASR Provider (multi-service) ── */
+  let asrProvider = null;
   let recognizing = false;
   let currentSpeaker = 'Speaker';
 
-  function startRecognition() {
-    if (!SpeechRecognition || recognizing) return;
+  function getASRSettings() {
+    return (window.ASRSettings && window.ASRSettings.load()) || { provider: 'browser' };
+  }
+
+  async function startRecognition() {
+    if (recognizing) return;
+    const settings = getASRSettings();
     try {
-      recognition = new SpeechRecognition();
-      recognition.lang = 'zh-CN';
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.maxAlternatives = 1;
-
-      recognition.onresult = (e) => {
-        if (!active) return;
-        for (let i = e.resultIndex; i < e.results.length; i++) {
-          if (e.results[i].isFinal) {
-            const text = e.results[i][0].transcript.trim();
-            if (text) {
-              active.transcript.push({ speaker: currentSpeaker, text, timestamp: elapsed });
-              active.updatedAt = Date.now();
-              renderActive();
-              scrollTranscript();
-            }
-          }
+      asrProvider = window.ASRProvider.create({
+        provider: settings.provider,
+        credentials: settings.credentials,
+        model: settings.model,
+        lang: settings.lang,
+        onResult: ({ text, isFinal }) => {
+          if (!active || !isFinal || !text) return;
+          active.transcript.push({ speaker: currentSpeaker, text, timestamp: elapsed });
+          active.updatedAt = Date.now();
+          renderActive();
+          scrollTranscript();
+        },
+        onError: (err) => {
+          showToast('语音识别出错：' + err.message);
+          stopRecognition();
+        },
+        onStatusChange: (status) => {
+          recognizing = status === 'listening';
+          renderActive();
         }
-      };
-
-      recognition.onerror = (e) => {
-        if (e.error === 'no-speech' || e.error === 'aborted') return;
-        showToast('语音识别出错：' + e.error);
-        stopRecognition();
-      };
-
-      recognition.onend = () => {
-        if (recognizing && active && !pausedAt) {
-          try { recognition.start(); } catch { stopRecognition(); }
-        }
-      };
-
-      recognition.start();
+      });
+      await asrProvider.init();
+      await asrProvider.start();
       recognizing = true;
     } catch (e) {
       showToast('无法启动语音识别：' + e.message);
+      recognizing = false;
     }
   }
 
   function stopRecognition() {
     recognizing = false;
-    if (recognition) {
-      try { recognition.stop(); } catch {}
-      recognition = null;
+    if (asrProvider) {
+      asrProvider.stop();
+      asrProvider = null;
     }
   }
 
@@ -386,9 +380,11 @@
       return;
     }
     initialized = true;
-    const hasASR = !!SpeechRecognition;
-    root.innerHTML = `<div class="ws-page-heading"><span class="ws-heading-icon">${icon('mic')}</span><div><h1>会议实时转写</h1><p>实时转写 · 自动摘要 · 行动项</p></div><button class="ws-btn primary" data-m-action="create">${icon('plus')}新建会议</button></div>
-      <div id="meetingEmpty" class="ws-empty ws-panel">${icon('mic')}<h2>让每一次会议都有价值</h2><p>会议记录、关键结论和行动项，在这里有序归档。</p><span class="ws-badge">${hasASR ? '已接入 Web Speech API 语音识别' : '语音识别不可用 · 可手动输入转写'}</span></div>
+    const asrSettings = getASRSettings();
+    const hasASR = asrSettings.provider === 'browser' ? !!(window.SpeechRecognition || window.webkitSpeechRecognition) : true;
+    const providerName = asrSettings.provider === 'browser' ? 'Web Speech API' : (window.ASRProvider?.getProviders?.()?.find(p => p.id === asrSettings.provider)?.name || asrSettings.provider);
+    root.innerHTML = `<div class="ws-page-heading"><span class="ws-heading-icon">${icon('mic')}</span><div><h1>会议实时转写</h1><p>实时转写 · 自动摘要 · 行动项</p></div><div class="ws-page-heading-actions"><button class="ws-btn" data-m-action="asr-settings">${icon('settings')}ASR 设置</button><button class="ws-btn primary" data-m-action="create">${icon('plus')}新建会议</button></div></div>
+      <div id="meetingEmpty" class="ws-empty ws-panel">${icon('mic')}<h2>让每一次会议都有价值</h2><p>会议记录、关键结论和行动项，在这里有序归档。</p><span class="ws-badge">当前引擎：${esc(providerName)}</span></div>
       <div id="meetingActive" hidden>
         <div class="meeting-header">
           <div class="meeting-header-info">
@@ -441,6 +437,9 @@
       const action = button.dataset.mAction;
       const btnId = button.dataset.mId;
       const meeting = meetings.find(m => m.id === button.closest('[data-m-id]')?.dataset.mId);
+      if (action === 'asr-settings') {
+        if (window.ASRSettings) window.ASRSettings.openDialog();
+      }
       if (action === 'create') {
         W.openDialog(`<div class="ws-dialog-head"><div><h2 id="wsDialogTitle">新建会议</h2><p>${hasASR ? '将自动启动麦克风进行语音识别' : '手动记录模式'}</p></div><button type="button" class="ws-icon-btn" data-ws-close aria-label="关闭">${icon('close')}</button></div>
           <form id="meetingForm"><label>会议名称<input id="meetingTitleInput" maxlength="100" placeholder="例如：产品评审会" autofocus></label><div class="ws-dialog-actions"><button type="button" class="ws-btn" data-ws-close>取消</button><button type="submit" class="ws-btn primary">开始会议</button></div></form>`, () => {});
