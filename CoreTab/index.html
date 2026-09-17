@@ -12,6 +12,15 @@
 <div class="container">
 
   <!-- ================================================================
+       SIDE NAV — Workspace navigation (left sidebar on desktop)
+       ================================================================ -->
+  <nav class="workspace-nav" aria-label="工作台导航">
+    <a href="#tabs" data-workspace-link="tabs" aria-current="page"><span data-ws-icon="tabs"></span>Tabs</a>
+    <a href="#prompts" data-workspace-link="prompts"><span data-ws-icon="spark"></span>Prompts</a>
+    <a href="#meetings" data-workspace-link="meetings"><span data-ws-icon="mic"></span>Meetings</a>
+  </nav>
+
+  <!-- ================================================================
        HEADER — CoreTab logo, greeting, search and settings
        ================================================================ -->
   <header class="workspace-header">
@@ -31,11 +40,6 @@
       <h1 id="greeting">Good morning</h1>
       <div class="date" id="dateDisplay"></div>
     </div>
-    <nav class="workspace-nav" aria-label="工作台导航">
-      <a href="#tabs" data-workspace-link="tabs" aria-current="page"><span data-ws-icon="tabs"></span>Tabs</a>
-      <a href="#prompts" data-workspace-link="prompts"><span data-ws-icon="spark"></span>Prompts</a>
-      <a href="#meetings" data-workspace-link="meetings"><span data-ws-icon="mic"></span>Meetings</a>
-    </nav>
     <div class="header-search" id="tabsHeaderSearch">
       <div class="search-box">
         <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
