@@ -12,8 +12,6 @@
 .workspace-nav a:focus-visible, .ws-page :focus-visible, .ws-dialog :focus-visible { outline: 2px solid var(--matcha-600); outline-offset: 3px; }
 #workspaceSearch { border: 0; background: transparent; color: var(--dark-charcoal); font: inherit; font-size: 13px; padding-left: 10px; width: 100%; min-width: 0; outline: none; }
 body[data-workspace="prompts"] .workspace-header, body[data-workspace="meetings"] .workspace-header { padding-bottom: 24px; margin-bottom: 32px; border-bottom: 1px solid var(--oat-light); }
-body:not([data-workspace="tabs"]) .workspace-header #greeting, body:not([data-workspace="tabs"]) .workspace-header #dateDisplay { visibility: hidden; height: 0; margin: 0; overflow: hidden; }
-body:not([data-workspace="tabs"]) .workspace-header .logo { margin-bottom: 0; }
 .ws-page { --ws-muted: #77776c; --ws-soft: #f0f6f0; font-size: 13px; color: var(--dark-charcoal); animation: ws-enter 180ms ease; }
 .ws-page h1 { font-size: 24px; letter-spacing: -.6px; font-weight: 650; }
 .ws-page h2 { font-size: 15px; font-weight: 600; }
