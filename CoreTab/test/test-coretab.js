@@ -55,7 +55,7 @@ test('声明 history 权限', manifest.permissions?.includes('history'));
 test('host_permissions 包含 GitHub API', manifest.host_permissions?.includes('https://api.github.com/*'));
 test('host_permissions 包含 Google favicon 服务（coretab-favicon-cache.js 依赖）', manifest.host_permissions?.includes('https://www.google.com/*'));
 test('host_permissions 包含 gstatic 重定向域（解决 favicon CORS 重定向问题）', manifest.host_permissions?.some(p => p.includes('gstatic.com')));
-test('host_permissions 数量小且明确（<= 4 个）', Array.isArray(manifest.host_permissions) && manifest.host_permissions.length <= 4);
+test('host_permissions 数量明确（<= 12 个，含 ASR WebSocket 权限）', Array.isArray(manifest.host_permissions) && manifest.host_permissions.length <= 12);
 test('不再申请 <all_urls> 权限', !JSON.stringify(manifest.host_permissions || []).includes('<all_urls>'));
 
 console.log('\n--- index.html / JS 拆分测试 ---\n');
@@ -146,6 +146,12 @@ checkSyntax('app.js');
 for (const file of jsFiles) {
   checkSyntax(`js/${file}`);
 }
+for (const file of ['asr-provider.js', 'asr-browser.js', 'asr-volcengine.js', 'asr-tencent.js', 'asr-alicloud.js', 'asr-settings.js']) {
+  checkSyntax(`js/asr/${file}`);
+}
+checkSyntax('js/coretab-workspaces.js');
+checkSyntax('js/coretab-prompts.js');
+checkSyntax('js/coretab-meetings.js');
 
 console.log('\n========================================');
 console.log(`  测试结果: ${passed} 通过, ${failed} 失败`);
