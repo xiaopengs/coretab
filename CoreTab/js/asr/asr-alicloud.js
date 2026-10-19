@@ -23,6 +23,7 @@ class ASRAlicloud {
     this.model = config.model || 'customer-service-domain';
     this.lang = config.lang || 'zh-CN';
     this.captureSystem = config.captureSystem === true;
+    this.systemMode = config.systemMode === 'display' ? 'display' : 'native';
 
     if (!this.credentials.accessKeyId || !this.credentials.accessKeySecret || !this.credentials.appKey) {
       throw new Error('阿里云配置不完整: 需要 accessKeyId, accessKeySecret, appKey');
@@ -46,9 +47,9 @@ class ASRAlicloud {
         this.ws.send(this.floatTo16BitPCM(inputData).buffer);
       };
       this.capture.onSystemEnded = () => {
-        this.onWarning('电脑声音共享已停止，继续使用麦克风识别');
+        this.onWarning('电脑声音内录已停止，继续使用麦克风识别');
       };
-      await this.capture.open({ mic: true, system: this.captureSystem });
+      await this.capture.open({ mic: true, system: this.captureSystem, systemMode: this.systemMode });
       if (this.capture.warnings.length) this.onWarning(this.capture.warnings.join('；'));
 
       // 构建 WebSocket URL

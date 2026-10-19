@@ -9,6 +9,8 @@ class ASRProvider {
     this.model = config.model || '';
     this.lang = config.lang || 'zh-CN';
     this.captureSystem = config.captureSystem === true;
+    // 内录来源：'native'（伴生程序，免弹窗）或 'display'（共享窗口兜底）
+    this.systemMode = config.systemMode === 'display' ? 'display' : 'native';
     this.onResult = config.onResult || (() => {});
     this.onError = config.onError || (() => {});
     this.onStatusChange = config.onStatusChange || (() => {});
@@ -43,7 +45,8 @@ class ASRProvider {
       credentials: this.credentials[this.provider] || {},
       model: this.model,
       lang: this.lang,
-      captureSystem: this.captureSystem
+      captureSystem: this.captureSystem,
+      systemMode: this.systemMode
     });
   }
 

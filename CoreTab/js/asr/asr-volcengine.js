@@ -22,6 +22,7 @@ class ASRVolcengine {
     this.model = config.model || 'bigmodel';
     this.lang = config.lang || 'zh-CN';
     this.captureSystem = config.captureSystem === true;
+    this.systemMode = config.systemMode === 'display' ? 'display' : 'native';
 
     if (!this.credentials.accessKeyId || !this.credentials.secretKey || !this.credentials.appId) {
       throw new Error('火山引擎配置不完整: 需要 accessKeyId, secretKey, appId');
@@ -39,9 +40,9 @@ class ASRVolcengine {
         this.ws.send(this.floatTo16BitPCM(inputData).buffer);
       };
       this.capture.onSystemEnded = () => {
-        this.onWarning('电脑声音共享已停止，继续使用麦克风识别');
+        this.onWarning('电脑声音内录已停止，继续使用麦克风识别');
       };
-      await this.capture.open({ mic: true, system: this.captureSystem });
+      await this.capture.open({ mic: true, system: this.captureSystem, systemMode: this.systemMode });
       if (this.capture.warnings.length) this.onWarning(this.capture.warnings.join('；'));
 
       // 生成签名

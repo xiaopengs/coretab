@@ -41,6 +41,17 @@ for (const file of asrFiles) {
   test(`${file} 文件存在`, fs.existsSync(filePath));
 }
 
+// 伴生程序（免弹窗内录）相关文件
+const nativeRoot = path.join(root, 'native');
+const nativeFiles = [
+  'coretab_audio_host.py',
+  'make_manifest.py',
+  'install_windows.bat'
+];
+for (const file of nativeFiles) {
+  test(`native/${file} 文件存在`, fs.existsSync(path.join(nativeRoot, file)));
+}
+
 console.log('\n--- ASR Provider 抽象层测试 ---\n');
 
 const providerJs = fs.readFileSync(path.join(asrRoot, 'asr-provider.js'), 'utf8');
@@ -57,6 +68,8 @@ test('Provider 支持 onStatusChange 回调', providerJs.includes('onStatusChang
 test('Provider 以属性方式接入 impl.onResult（修复回调未接通）', providerJs.includes('this.impl.onResult = this.onResult'));
 test('Provider 以属性方式接入 impl.onError', providerJs.includes('this.impl.onError = this.onError'));
 test('Provider 以属性方式接入 impl.onStatusChange', providerJs.includes('this.impl.onStatusChange = this.onStatusChange'));
+test('Provider 支持内录来源 systemMode', providerJs.includes('systemMode'));
+test('Provider 向内录引擎透传 captureSystem', providerJs.includes('captureSystem: this.captureSystem'));
 test('Provider 导出 getProviders 方法', providerJs.includes('ASRProvider.getProviders'));
 test('Provider 导出 create 工厂方法', providerJs.includes('ASRProvider.create'));
 test('Provider 支持 browser 引擎', providerJs.includes("'browser'"));
@@ -91,9 +104,16 @@ test('ASRCapture 请求共享音频', captureJs.includes('audio: {'));
 test('ASRCapture 保留视频轨并监听停止共享', captureJs.includes('getVideoTracks') && captureJs.includes("'ended'"));
 test('ASRCapture 使用 AudioContext 混音', captureJs.includes('AudioContext') && captureJs.includes('mixGain'));
 test('ASRCapture 同时接入麦克风与内录两路', captureJs.includes('connectSource(this.micStream') && captureJs.includes('connectSource(this.displayStream'));
-test('ASRCapture 输出 16k 单声道 PCM 帧回调', captureJs.includes('onframe') && captureJs.includes('createScriptProcessor(4096, 1, 1)'));
+test('ASRCapture 输出 16k 单声道 PCM 帧回调', captureJs.includes('onframe') && captureJs.includes('createScriptProcessor(CAPTURE_FRAME, 1, 1)'));
 test('ASRCapture 未勾选分享音频时给出提示', captureJs.includes('未勾选'));
-test('ASRCapture 两路都拿不到才抛错', captureJs.includes('!this.micStream && !this.systemActive'));
+test('ASRCapture 所有来源都拿不到才抛错', captureJs.includes('!hasWebDriver && !this.nativeActive'));
+test('ASRCapture 支持 systemMode 选择内录来源', captureJs.includes('systemMode'));
+test('ASRCapture 通过 connectNative 连接伴生程序（免弹窗内录）', captureJs.includes('connectNative'));
+test('ASRCapture 定义伴生程序主机名', captureJs.includes('com.coretab.audio_capture'));
+test('ASRCapture 用环形缓冲缓存伴生程序音频', captureJs.includes('writeRing') && captureJs.includes('readRingInto'));
+test('ASRCapture 把伴生程序音频与麦克风样本级混音', captureJs.includes('emitFrame') && captureJs.includes('nativeActive'));
+test('ASRCapture 仅内录时用定时器驱动帧输出', captureJs.includes('pullTimer'));
+test('ASRCapture 伴生程序未安装时给出安装引导', captureJs.includes('install_windows.bat'));
 test('ASRCapture 导出到 window.ASRCapture', captureJs.includes('window.ASRCapture'));
 
 console.log('\n--- 火山引擎 ASR 测试 ---\n');
@@ -206,6 +226,7 @@ test('manifest 包含火山引擎 WebSocket 权限', manifest.host_permissions?.
 test('manifest 包含腾讯云 WebSocket 权限', manifest.host_permissions?.some(p => p.includes('asr.cloud.tencent.com')));
 test('manifest 包含阿里云 WebSocket 权限', manifest.host_permissions?.some(p => p.includes('nls-gateway')));
 test('manifest 包含阿里云 Token API 权限', manifest.host_permissions?.some(p => p.includes('nls-meta')));
+test('manifest 声明 nativeMessaging 权限（伴生程序内录）', Array.isArray(manifest.permissions) && manifest.permissions.includes('nativeMessaging'));
 
 console.log('\n--- 样式测试 ---\n');
 

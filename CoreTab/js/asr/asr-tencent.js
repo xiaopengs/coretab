@@ -54,6 +54,7 @@ class ASRTencent {
     this.model = TENCENT_LEGACY_MODELS[config.model] || config.model || '16k_zh_en_2.0';
     this.lang = config.lang || 'zh-CN';
     this.captureSystem = config.captureSystem === true;
+    this.systemMode = config.systemMode === 'display' ? 'display' : 'native';
 
     if (!this.credentials.secretId || !this.credentials.secretKey) {
       throw new Error('腾讯云配置不完整：需要 SecretId、SecretKey');
@@ -136,10 +137,10 @@ class ASRTencent {
       this.ws.send(this.floatTo16BitPCM(inputData).buffer);
     };
     this.capture.onSystemEnded = () => {
-      this.onWarning('电脑声音共享已停止，继续使用麦克风识别');
+      this.onWarning('电脑声音内录已停止，继续使用麦克风识别');
     };
     try {
-      await this.capture.open({ mic: true, system: this.captureSystem });
+      await this.capture.open({ mic: true, system: this.captureSystem, systemMode: this.systemMode });
     } catch (e) {
       this.onStatusChange('stopped');
       throw new Error('无法获取音频来源：' + e.message);

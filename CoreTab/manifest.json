@@ -3,7 +3,7 @@
   "name": "CoreTab",
   "version": "2.4.0",
   "description": "Default new tab page with tab management, GitHub trending, and history",
-  "permissions": ["tabs", "activeTab", "storage", "history"],
+  "permissions": ["tabs", "activeTab", "storage", "history", "nativeMessaging"],
   "chrome_url_overrides": {
     "newtab": "index.html"
   },

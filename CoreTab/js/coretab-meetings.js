@@ -259,7 +259,7 @@
             <input type="checkbox" id="meetingCaptureSystem" ${state.captureSystem ? 'checked' : ''}>
             <span>同时录制电脑声音（内录），与麦克风一起识别</span>
           </label>
-          <p class="meeting-capture-hint">开启后会弹出共享窗口：选择要录制的屏幕 / 窗口 / 标签页，并勾选「分享系统音频」或「分享标签页音频」。</p>
+          <p class="meeting-capture-hint">内录通过「音频伴生程序」直接采集全系统声音（含桌面客户端），无需弹窗。首次使用请运行扩展目录下 native/install_windows.bat 安装，然后重启浏览器。未安装伴生程序时内录不可用，将仅使用麦克风。</p>
           ` : ''}
           <div class="ws-dialog-actions">
             <button type="button" class="ws-btn" data-ws-close>取消</button>
