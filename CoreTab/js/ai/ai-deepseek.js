@@ -5,7 +5,7 @@
   class DeepSeekProvider extends window.AIProvider {
     constructor(config) {
       super(config);
-      this.baseUrl = config.baseUrl || 'https://api.deepseek.com/v1';
+      this.baseUrl = config.baseUrl || 'https://api.deepseek.com';
     }
 
     async chat(messages, options = {}) {
