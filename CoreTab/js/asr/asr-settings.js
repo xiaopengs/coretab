@@ -100,6 +100,7 @@ const ASRSettings = {
    * 渲染服务商配置字段
    */
   renderProviderFields(provider, settings) {
+    const { escape: esc } = window.CoreTabWorkspace;
     if (!provider || !provider.needsKey) {
       return `<div class="asr-info">
         <p>使用浏览器内置的语音识别能力，无需配置。</p>

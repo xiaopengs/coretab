@@ -157,9 +157,8 @@
         </div>
       `;
 
-      window.CoreTabWorkspace.openDialog(html, () => {
-        this.bindEvents();
-      });
+      window.CoreTabWorkspace.openDialog(html, () => {});
+      this.bindEvents();
     },
 
     renderModelOptions(providerId, selectedModel) {
@@ -240,9 +239,9 @@
         const settings = this.gatherSettings();
         if (this.save(settings)) {
           window.CoreTabWorkspace.closeDialog();
-          window.CoreTabWorkspace.showToast('AI 设置已保存');
+          showToast('AI 设置已保存');
         } else {
-          window.CoreTabWorkspace.showToast('保存失败，请重试');
+          showToast('保存失败，请重试');
         }
       });
     },
