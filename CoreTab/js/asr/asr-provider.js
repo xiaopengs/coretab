@@ -30,10 +30,10 @@ class ASRProvider {
       throw new Error(`Unknown ASR provider: ${this.provider}`);
     }
 
-    // 设置回调
-    this.impl.onResult(this.onResult);
-    this.impl.onError(this.onError);
-    this.impl.onStatusChange(this.onStatusChange);
+    // 设置回调（各引擎把 onResult / onError / onStatusChange 作为回调属性暴露）
+    this.impl.onResult = this.onResult;
+    this.impl.onError = this.onError;
+    this.impl.onStatusChange = this.onStatusChange;
 
     // 初始化引擎
     await this.impl.init({
