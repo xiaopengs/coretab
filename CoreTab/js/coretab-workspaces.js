@@ -31,6 +31,9 @@ window.CoreTabWorkspace = (() => {
   };
   const icon = name => `<svg class="ws-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || paths.note}</svg>`;
   const escape = value => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  const uuid = () => (typeof crypto !== 'undefined' && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : `id-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
   const searches = { prompts: '', meetings: '' };
   const handlers = {};
   const positions = { tabs: 0, prompts: 0, meetings: 0 };
@@ -134,6 +137,6 @@ window.CoreTabWorkspace = (() => {
   }
 
   document.addEventListener('DOMContentLoaded', init);
-  return { icon, escape, read, save, copy, openDialog, closeDialog, setSearch,
+  return { icon, escape, uuid, read, save, copy, openDialog, closeDialog, setSearch,
     onSearch: (workspace, handler) => { handlers[workspace] = handler; } };
 })();

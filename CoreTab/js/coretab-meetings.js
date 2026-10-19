@@ -702,7 +702,7 @@
       }
       const now = Date.now();
       const meeting = {
-        id: crypto.randomUUID(),
+        id: W.uuid(),
         title,
         status: 'active',
         participants: ['Speaker'],

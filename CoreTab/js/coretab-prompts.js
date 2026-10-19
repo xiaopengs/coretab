@@ -139,7 +139,7 @@
       const fields = formData();
       if (!fields.title || !fields.content || !fields.model) { document.getElementById('wsDialogError').textContent = '名称、模型和正文不能为空。'; return; }
       const now = Date.now();
-      const ok = update(items => prompt ? items.map(p => p.id === prompt.id ? { ...p, ...fields, updatedAt: now } : p) : [...items, { ...fields, id: crypto.randomUUID(), favorite: false, usageCount: 0, deleted: false, createdAt: now, updatedAt: now, lastUsedAt: 0 }]);
+      const ok = update(items => prompt ? items.map(p => p.id === prompt.id ? { ...p, ...fields, updatedAt: now } : p) : [...items, { ...fields, id: W.uuid(), favorite: false, usageCount: 0, deleted: false, createdAt: now, updatedAt: now, lastUsedAt: 0 }]);
       if (ok) { saved = true; draft = null; W.closeDialog(); showToast('Prompt 已保存'); }
     });
     preview(true);
