@@ -87,9 +87,10 @@
               </div>
               <div class="ai-field">
                 <label class="ai-field-label">模型</label>
-                <select id="aiModel" class="ai-field-input">
-                  ${this.renderModelOptions(settings.provider, settings.model)}
-                </select>
+                <input type="text" id="aiModel" class="ai-field-input" list="aiModelList"
+                       placeholder="从列表选择或直接输入模型 ID" autocomplete="off" value="${settings.model || ''}">
+                <datalist id="aiModelList">${this.renderModelOptions(settings.provider)}</datalist>
+                <span class="ai-field-hint">支持下拉选择，也可手动输入自定义模型 ID</span>
               </div>
             </div>
           </div>
@@ -161,13 +162,13 @@
       this.bindEvents();
     },
 
-    renderModelOptions(providerId, selectedModel) {
+    renderModelOptions(providerId) {
       const providers = window.AIProvider.getProviders();
       const provider = providers.find(p => p.id === providerId);
       if (!provider) return '';
-      
+
       return provider.models.map(m => 
-        `<option value="${m.id}" ${selectedModel === m.id ? 'selected' : ''}>${m.name}</option>`
+        `<option value="${m.id}">${m.name}</option>`
       ).join('');
     },
 
@@ -179,9 +180,9 @@
           const providers = window.AIProvider.getProviders();
           const provider = providers.find(p => p.id === providerId);
           
-          // 更新模型列表
-          const modelSelect = document.getElementById('aiModel');
-          modelSelect.innerHTML = this.renderModelOptions(providerId, provider.defaultModel);
+          // 更新模型候选列表，并重置为新服务商的默认模型
+          document.getElementById('aiModelList').innerHTML = this.renderModelOptions(providerId);
+          document.getElementById('aiModel').value = provider.defaultModel || '';
           
           // 更新帮助链接
           const helpLink = document.querySelector('.ai-help-link');
@@ -253,7 +254,7 @@
       
       return {
         provider: provider,
-        model: document.getElementById('aiModel').value,
+        model: document.getElementById('aiModel').value.trim(),
         apiKey: document.getElementById('aiApiKey').value.trim(),
         baseUrl: providerConfig.baseUrl,
         temperature: parseFloat(document.getElementById('aiTemperature').value),
