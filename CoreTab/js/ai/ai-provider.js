@@ -31,10 +31,11 @@
             { key: 'apiKey', label: 'API Key', type: 'password', placeholder: 'sk-...' }
           ],
           models: [
+            { id: 'deepseek-flash', name: 'DeepSeek Flash', contextLength: 64000 },
             { id: 'deepseek-chat', name: 'DeepSeek Chat', contextLength: 64000 },
             { id: 'deepseek-reasoner', name: 'DeepSeek R1', contextLength: 64000 }
           ],
-          defaultModel: 'deepseek-chat',
+          defaultModel: 'deepseek-flash',
           baseUrl: 'https://api.deepseek.com/v1',
           helpUrl: 'https://platform.deepseek.com/api_keys'
         },

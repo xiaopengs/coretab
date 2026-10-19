@@ -6,6 +6,8 @@
   const W = window.CoreTabWorkspace;
   const { icon, escape: esc } = W;
   const KEY = 'coretab_meetings_v1';
+  const RETENTION_DAYS = 12;
+  const RETENTION_MS = RETENTION_DAYS * 24 * 60 * 60 * 1000;
   const root = document.getElementById('meetingsWorkspace');
 
   // ── State ──
@@ -43,6 +45,16 @@
     },
 
     load() { return W.read(KEY, [], this.valid); },
+
+    // 自动清理超过 RETENTION_DAYS 天未更新的会议，返回清理条数
+    cleanup() {
+      const cutoff = Date.now() - RETENTION_MS;
+      const items = this.load();
+      const kept = items.filter(m => (Number.isFinite(m.updatedAt) ? m.updatedAt : m.createdAt) >= cutoff);
+      if (kept.length === items.length) return 0;
+      W.save(KEY, kept);
+      return items.length - kept.length;
+    },
 
     update(change) {
       try {
@@ -1044,6 +1056,7 @@
   function init() {
     if (state.initialized) return;
     try {
+      Storage.cleanup();
       state.meetings = Storage.load();
     } catch {
       root.innerHTML = Templates.errorState();

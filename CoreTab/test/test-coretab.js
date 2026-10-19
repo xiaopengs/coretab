@@ -164,6 +164,7 @@ const meetingAnalysisEngineJs = fs.readFileSync(path.join(jsRoot, 'ai/meeting-an
 const incrementalAnalyzerJs = fs.readFileSync(path.join(jsRoot, 'ai/incremental-analyzer.js'), 'utf8');
 const resultHandlerJs = fs.readFileSync(path.join(jsRoot, 'ai/result-handler.js'), 'utf8');
 const triggerControllerJs = fs.readFileSync(path.join(jsRoot, 'ai/trigger-controller.js'), 'utf8');
+const meetingsJs = fs.readFileSync(path.join(jsRoot, 'coretab-meetings.js'), 'utf8');
 
 test('AI Provider 支持 DeepSeek', aiProviderJs.includes('deepseek'));
 test('AI Provider 支持 Kimi', aiProviderJs.includes('kimi'));
@@ -185,7 +186,9 @@ test('ResultHandler 验证漏洞类型', resultHandlerJs.includes('validateFlawT
 test('ResultHandler 验证话术风格', resultHandlerJs.includes('validateResponseStyle'));
 test('TriggerController 支持防抖', triggerControllerJs.includes('debounce'));
 test('TriggerController 支持条件触发', triggerControllerJs.includes('check()'));
-test('Meetings 集成 AI 分析引擎', fs.readFileSync(path.join(jsRoot, 'coretab-meetings.js'), 'utf8').includes('analysisEngine'));
+test('Meetings 集成 AI 分析引擎', meetingsJs.includes('analysisEngine'));
+test('Meetings 自动清理超过 12 天的会议', meetingsJs.includes('RETENTION_DAYS = 12') && meetingsJs.includes('cleanup()'));
+test('AI 默认模型为 deepseek-flash', aiProviderJs.includes("'deepseek-flash'") && aiSettingsJs.includes("model: 'deepseek-flash'"));
 test('HTML 加载 AI 模块', html.includes('js/ai/ai-provider.js') && html.includes('js/ai/meeting-analysis-engine.js'));
 test('Manifest 包含 LLM API 权限', manifest.host_permissions?.includes('https://api.deepseek.com/*') && manifest.host_permissions?.includes('https://api.moonshot.cn/*') && manifest.host_permissions?.includes('https://open.bigmodel.cn/*'));
 

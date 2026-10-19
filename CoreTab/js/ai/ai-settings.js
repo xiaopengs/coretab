@@ -30,7 +30,7 @@
     getDefault() {
       return {
         provider: 'deepseek',
-        model: 'deepseek-chat',
+        model: 'deepseek-flash',
         apiKey: '',
         baseUrl: '',
         temperature: 0.3,
