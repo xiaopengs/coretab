@@ -107,6 +107,7 @@ js/asr/
       appId: ''
     },
     tencent: {
+      appId: '',                     // 腾讯云账号 AppID
       secretId: '',
       secretKey: ''
     }
@@ -136,14 +137,16 @@ PCM 16-bit 编码 → WebSocket.send(ArrayBuffer)
 | 服务商 | WebSocket URL | 认证方式 |
 |--------|--------------|----------|
 | 火山引擎 | `wss://openspeech.bytedance.com/api/v3/sauc/bigmodel` | HMAC-SHA256 签名 |
-| 腾讯云 | `wss://asr.cloud.tencent.com/asr/v2/` | Token（先 REST 获取） |
+| 腾讯云 | `wss://asr.cloud.tencent.com/asr/v2/<appid>` | HMAC-SHA1 签名（Query 携带 signature） |
 | 阿里云 | `wss://nls-gateway.cn-shanghai.aliyuncs.com/ws/v1` | Token（先 REST 获取） |
 
 ### 7.2 签名计算
 
 火山引擎使用 HMAC-SHA256 签名直接认证 WebSocket 连接，可在浏览器中通过 `crypto.subtle.sign()` 完成，无需后端。
 
-腾讯云和阿里云需要先通过 HTTPS REST API 获取临时 Token，再携带 Token 建立 WebSocket 连接。
+腾讯云使用 HMAC-SHA1 签名：将除 `signature` 外的所有握手参数按字典序排序拼接进请求 URL（不含 `wss://`），以 SecretKey 做 HMAC-SHA1 后 Base64 编码，再 URL 编码作为 `signature` 参数。全程可在浏览器通过 `crypto.subtle` 完成，无需后端。
+
+阿里云需要先通过 HTTPS REST API 获取临时 Token，再携带 Token 建立 WebSocket 连接。
 
 ## 8. 设置 UI 设计
 
@@ -230,7 +233,6 @@ function startRecognition() {
     "wss://openspeech.bytedance.com/*",
     "https://openspeech.bytedance.com/*",
     "wss://asr.cloud.tencent.com/*",
-    "https://asr.api.tencentcloud.com/*",
     "wss://nls-gateway.cn-shanghai.aliyuncs.com/*",
     "https://nls-meta.cn-shanghai.aliyuncs.com/*"
   ]

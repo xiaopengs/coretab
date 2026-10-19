@@ -33,16 +33,14 @@ class ASRBrowser {
 
     this.recognition.onresult = (e) => {
       for (let i = e.resultIndex; i < e.results.length; i++) {
-        if (e.results[i].isFinal) {
-          const text = e.results[i][0].transcript.trim();
-          if (text) {
-            this.onResult({
-              text,
-              isFinal: true,
-              timestamp: Date.now()
-            });
-          }
-        }
+        const result = e.results[i];
+        const text = result[0].transcript.trim();
+        if (!text) continue;
+        this.onResult({
+          text,
+          isFinal: result.isFinal,
+          timestamp: Date.now()
+        });
       }
     };
 

@@ -19,6 +19,7 @@
     hasASR: false,
     asrProvider: null,
     recognizing: false,
+    interim: null,
     currentSpeaker: 'Speaker',
     analysisEngine: null,
     aiProvider: null
@@ -370,7 +371,10 @@
 
       const transcriptList = el('#transcriptList');
       if (transcriptList) {
-        transcriptList.innerHTML = state.active.transcript.map(t => Templates.transcriptItem(t)).join('');
+        const items = state.active.transcript.map(t => Templates.transcriptItem(t));
+        if (state.interim && state.interim.text) items.push(this.interimItem(state.interim));
+        transcriptList.innerHTML = items.join('')
+          || '<div class="transcript-placeholder ws-muted">等待语音输入…也可以手动输入转写内容</div>';
       }
 
       const summaryList = el('#summaryList');
@@ -390,6 +394,39 @@
         actionItemsList.innerHTML = state.active.actionItems.map((a, i) => Templates.actionItem(a, i)).join('')
           || '<li class="ws-muted">暂无行动项。</li>';
       }
+    },
+
+    interimItem(t) {
+      return `
+        <div class="transcript-item interim">
+          <div class="transcript-speaker">${esc(t.speaker)}</div>
+          <div class="transcript-time">识别中…</div>
+          <div class="transcript-text">${esc(t.text)}</div>
+        </div>
+      `;
+    },
+
+    interim() {
+      const list = root.querySelector('#transcriptList');
+      if (!list) return;
+      let item = list.querySelector('.transcript-item.interim');
+      if (!state.interim || !state.interim.text) {
+        if (item) item.remove();
+        if (!list.querySelector('.transcript-item')) {
+          list.innerHTML = '<div class="transcript-placeholder ws-muted">等待语音输入…也可以手动输入转写内容</div>';
+        }
+        return;
+      }
+      if (!item) {
+        list.querySelector('.transcript-placeholder')?.remove();
+        item = document.createElement('div');
+        item.className = 'transcript-item interim';
+        item.innerHTML = '<div class="transcript-speaker"></div><div class="transcript-time">识别中…</div><div class="transcript-text"></div>';
+        list.appendChild(item);
+      }
+      item.querySelector('.transcript-speaker').textContent = state.interim.speaker;
+      item.querySelector('.transcript-text').textContent = state.interim.text;
+      list.scrollTop = list.scrollHeight;
     },
 
     aiPanels(analysis, tokenUsage) {
@@ -481,19 +518,27 @@
     async start() {
       if (state.recognizing) return;
       const settings = Storage.getASRSettings();
+      state.interim = null;
       try {
         state.asrProvider = window.ASRProvider.create({
           provider: settings.provider,
           credentials: settings.credentials,
           model: settings.model,
           lang: settings.lang,
-          onResult: ({ text, isFinal }) => {
-            if (!state.active || !isFinal || !text) return;
-            state.active.transcript.push({ speaker: state.currentSpeaker, text, timestamp: state.elapsed });
-            state.active.updatedAt = Date.now();
-            Render.active();
-            Actions.scrollTranscript();
-            if (state.analysisEngine) state.analysisEngine.notifyNewTranscript();
+          onResult: ({ text, isFinal, speaker }) => {
+            if (!state.active || !text) return;
+            const who = speaker || state.currentSpeaker;
+            if (isFinal) {
+              state.interim = null;
+              state.active.transcript.push({ speaker: who, text, timestamp: state.elapsed });
+              state.active.updatedAt = Date.now();
+              Render.active();
+              Actions.scrollTranscript();
+              if (state.analysisEngine) state.analysisEngine.notifyNewTranscript();
+            } else {
+              state.interim = { speaker: who, text };
+              Render.interim();
+            }
           },
           onError: (err) => {
             showToast('语音识别出错：' + err.message);
@@ -515,10 +560,12 @@
 
     stop() {
       state.recognizing = false;
+      state.interim = null;
       if (state.asrProvider) {
         state.asrProvider.stop();
         state.asrProvider = null;
       }
+      Render.active();
     }
   };
 

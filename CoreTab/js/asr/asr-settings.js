@@ -40,7 +40,7 @@ const ASRSettings = {
       lang: 'zh-CN',
       credentials: {
         volcengine: { accessKeyId: '', secretKey: '', appId: '' },
-        tencent: { secretId: '', secretKey: '' },
+        tencent: { appId: '', secretId: '', secretKey: '' },
         alicloud: { accessKeyId: '', accessKeySecret: '', appKey: '' }
       }
     };
@@ -191,7 +191,8 @@ const ASRSettings = {
       try {
         const provider = window.ASRProvider.create(currentSettings);
         await provider.init();
-        errorEl.textContent = '✓ 凭证格式正确';
+        await provider.test();
+        errorEl.textContent = '✓ 连接成功，凭证有效';
         errorEl.style.color = '#078a52';
       } catch (e) {
         errorEl.textContent = '✗ ' + e.message;

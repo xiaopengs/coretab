@@ -71,6 +71,16 @@ class ASRProvider {
   resume() {
     if (this.impl) this.impl.resume();
   }
+
+  /**
+   * 测试连接：若底层实现支持真实握手则调用，否则仅确认凭证格式
+   */
+  async test() {
+    if (this.impl && typeof this.impl.testConnection === 'function') {
+      return this.impl.testConnection();
+    }
+    return true;
+  }
 }
 
 /**
@@ -104,13 +114,13 @@ ASRProvider.getProviders = function() {
       name: '腾讯云',
       needsKey: true,
       keyFields: [
+        { key: 'appId', label: 'AppID', placeholder: '例如 1250000000', type: 'text' },
         { key: 'secretId', label: 'SecretId', placeholder: 'AKIDxxxxxxxxxxxxxxxx', type: 'text' },
         { key: 'secretKey', label: 'SecretKey', placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxx', type: 'password' }
       ],
       models: [
-        { id: '16k_zh_large', name: '大模型 2.0 版', lang: 'zh-CN' },
-        { id: '16k_zh', name: '中文通用', lang: 'zh-CN' },
-        { id: '16k_en', name: '英语', lang: 'en-US' }
+        { id: '16k_zh_en_2.0', name: '大模型 2.0（中英+方言）', lang: 'zh-CN' },
+        { id: '16k_zh_en_speaker_2.0', name: '大模型 2.0（含说话人分离）', lang: 'zh-CN' }
       ]
     },
     {
