@@ -20,6 +20,7 @@
     asrProvider: null,
     recognizing: false,
     interim: null,
+    asrError: null,
     currentSpeaker: 'Speaker',
     analysisEngine: null,
     aiProvider: null
@@ -373,8 +374,10 @@
       if (transcriptList) {
         const items = state.active.transcript.map(t => Templates.transcriptItem(t));
         if (state.interim && state.interim.text) items.push(this.interimItem(state.interim));
-        transcriptList.innerHTML = items.join('')
-          || '<div class="transcript-placeholder ws-muted">等待语音输入…也可以手动输入转写内容</div>';
+        const fallback = state.asrError
+          ? `<div class="transcript-placeholder ws-error">语音识别未启动：${esc(state.asrError)}</div>`
+          : '<div class="transcript-placeholder ws-muted">等待语音输入…也可以手动输入转写内容</div>';
+        transcriptList.innerHTML = items.join('') || fallback;
       }
 
       const summaryList = el('#summaryList');
@@ -519,6 +522,7 @@
       if (state.recognizing) return;
       const settings = Storage.getASRSettings();
       state.interim = null;
+      state.asrError = null;
       try {
         state.asrProvider = window.ASRProvider.create({
           provider: settings.provider,
@@ -541,11 +545,13 @@
             }
           },
           onError: (err) => {
+            state.asrError = err.message;
             showToast('语音识别出错：' + err.message);
             this.stop();
           },
           onStatusChange: (status) => {
             state.recognizing = status === 'listening';
+            if (status === 'listening') state.asrError = null;
             Render.active();
           }
         });
@@ -553,8 +559,10 @@
         await state.asrProvider.start();
         state.recognizing = true;
       } catch (e) {
+        state.asrError = e.message;
         showToast('无法启动语音识别：' + e.message);
         state.recognizing = false;
+        Render.active();
       }
     },
 
