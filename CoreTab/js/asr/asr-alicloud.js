@@ -5,12 +5,12 @@
 class ASRAlicloud {
   constructor() {
     this.ws = null;
-    this.audioContext = null;
-    this.mediaStream = null;
-    this.processor = null;
+    this.capture = null;
+    this.captureSystem = false;
     this.onResult = () => {};
     this.onError = () => {};
     this.onStatusChange = () => {};
+    this.onWarning = () => {};
     this.credentials = {};
     this.model = 'customer-service-domain';
     this.lang = 'zh-CN';
@@ -22,6 +22,7 @@ class ASRAlicloud {
     this.credentials = config.credentials || {};
     this.model = config.model || 'customer-service-domain';
     this.lang = config.lang || 'zh-CN';
+    this.captureSystem = config.captureSystem === true;
 
     if (!this.credentials.accessKeyId || !this.credentials.accessKeySecret || !this.credentials.appKey) {
       throw new Error('阿里云配置不完整: 需要 accessKeyId, accessKeySecret, appKey');
@@ -38,22 +39,17 @@ class ASRAlicloud {
       // 生成 task_id
       this.taskId = this.generateTaskId();
 
-      // 获取麦克风权限
-      this.mediaStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          sampleRate: 16000,
-          channelCount: 1,
-          echoCancellation: true,
-          noiseSuppression: true
-        }
-      });
-
-      // 创建音频上下文
-      this.audioContext = new AudioContext({ sampleRate: 16000 });
-      const source = this.audioContext.createMediaStreamSource(this.mediaStream);
-
-      // 创建脚本处理器
-      this.processor = this.audioContext.createScriptProcessor(3200, 1, 1);
+      // 采集音频：麦克风外录，并按需叠加电脑声音内录
+      this.capture = new window.ASRCapture();
+      this.capture.onframe = (inputData) => {
+        if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+        this.ws.send(this.floatTo16BitPCM(inputData).buffer);
+      };
+      this.capture.onSystemEnded = () => {
+        this.onWarning('电脑声音共享已停止，继续使用麦克风识别');
+      };
+      await this.capture.open({ mic: true, system: this.captureSystem });
+      if (this.capture.warnings.length) this.onWarning(this.capture.warnings.join('；'));
 
       // 构建 WebSocket URL
       const wsUrl = `wss://nls-gateway.cn-shanghai.aliyuncs.com/ws/v1?token=${this.token}`;
@@ -114,26 +110,9 @@ class ASRAlicloud {
       };
 
       this.ws.onclose = (event) => {
-        if (this.processor) {
-          this.processor.disconnect();
-          this.processor = null;
-        }
+        if (this.capture) this.capture.close();
         this.onStatusChange('stopped');
       };
-
-      // 连接音频处理
-      source.connect(this.processor);
-      this.processor.connect(this.audioContext.destination);
-
-      // 处理音频数据
-      this.processor.onaudioprocess = (event) => {
-        if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
-
-        const inputData = event.inputBuffer.getChannelData(0);
-        const pcmData = this.floatTo16BitPCM(inputData);
-        this.ws.send(pcmData.buffer);
-      };
-
     } catch (e) {
       this.cleanup();
       throw new Error('启动阿里云识别失败: ' + e.message);
@@ -169,21 +148,9 @@ class ASRAlicloud {
   }
 
   cleanup() {
-    if (this.processor) {
-      try {
-        this.processor.disconnect();
-      } catch (e) {}
-      this.processor = null;
-    }
-    if (this.mediaStream) {
-      this.mediaStream.getTracks().forEach(track => track.stop());
-      this.mediaStream = null;
-    }
-    if (this.audioContext) {
-      try {
-        this.audioContext.close();
-      } catch (e) {}
-      this.audioContext = null;
+    if (this.capture) {
+      this.capture.close();
+      this.capture = null;
     }
   }
 

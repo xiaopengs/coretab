@@ -38,6 +38,8 @@ const ASRSettings = {
       provider: 'browser',
       model: '',
       lang: 'zh-CN',
+      // 电脑声音内录开关（与麦克风外录同时采集）
+      captureSystem: true,
       credentials: {
         volcengine: { accessKeyId: '', secretKey: '', appId: '' },
         tencent: { appId: '', secretId: '', secretKey: '' },

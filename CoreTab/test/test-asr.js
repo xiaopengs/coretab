@@ -28,6 +28,7 @@ console.log('--- 文件存在性测试 ---\n');
 
 const asrFiles = [
   'asr-provider.js',
+  'asr-capture.js',
   'asr-browser.js',
   'asr-volcengine.js',
   'asr-tencent.js',
@@ -79,6 +80,22 @@ test('Browser ASR 处理 onerror 事件', browserJs.includes('onerror'));
 test('Browser ASR 处理 onend 事件', browserJs.includes('onend'));
 test('Browser ASR 导出到 window.ASRBrowser', browserJs.includes('window.ASRBrowser'));
 
+console.log('\n--- 音频采集（外录 + 内录）测试 ---\n');
+
+const captureJs = fs.readFileSync(path.join(asrRoot, 'asr-capture.js'), 'utf8');
+
+test('ASRCapture 定义 ASRCapture 类', captureJs.includes('class ASRCapture'));
+test('ASRCapture 使用 getUserMedia 采集麦克风（外录）', captureJs.includes('getUserMedia'));
+test('ASRCapture 使用 getDisplayMedia 采集电脑声音（内录）', captureJs.includes('getDisplayMedia'));
+test('ASRCapture 请求共享音频', captureJs.includes('audio: {'));
+test('ASRCapture 保留视频轨并监听停止共享', captureJs.includes('getVideoTracks') && captureJs.includes("'ended'"));
+test('ASRCapture 使用 AudioContext 混音', captureJs.includes('AudioContext') && captureJs.includes('mixGain'));
+test('ASRCapture 同时接入麦克风与内录两路', captureJs.includes('connectSource(this.micStream') && captureJs.includes('connectSource(this.displayStream'));
+test('ASRCapture 输出 16k 单声道 PCM 帧回调', captureJs.includes('onframe') && captureJs.includes('createScriptProcessor(4096, 1, 1)'));
+test('ASRCapture 未勾选分享音频时给出提示', captureJs.includes('未勾选'));
+test('ASRCapture 两路都拿不到才抛错', captureJs.includes('!this.micStream && !this.systemActive'));
+test('ASRCapture 导出到 window.ASRCapture', captureJs.includes('window.ASRCapture'));
+
 console.log('\n--- 火山引擎 ASR 测试 ---\n');
 
 const volcengineJs = fs.readFileSync(path.join(asrRoot, 'asr-volcengine.js'), 'utf8');
@@ -87,10 +104,10 @@ test('Volcengine ASR 定义 ASRVolcengine 类', volcengineJs.includes('class ASR
 test('Volcengine ASR 使用 WebSocket', volcengineJs.includes('WebSocket'));
 test('Volcengine ASR 连接火山引擎端点', volcengineJs.includes('openspeech.bytedance.com'));
 test('Volcengine ASR 实现 HMAC-SHA256 签名', volcengineJs.includes('HMAC') && volcengineJs.includes('SHA-256'));
-test('Volcengine ASR 使用 AudioContext', volcengineJs.includes('AudioContext'));
-test('Volcengine ASR 使用 getUserMedia', volcengineJs.includes('getUserMedia'));
+test('Volcengine ASR 通过 ASRCapture 采集音频', volcengineJs.includes('ASRCapture'));
+test('Volcengine ASR 支持电脑内录开关', volcengineJs.includes('captureSystem'));
 test('Volcengine ASR 实现 PCM 编码', volcengineJs.includes('Int16Array') || volcengineJs.includes('floatTo16BitPCM'));
-test('Volcengine ASR 支持流式传输', volcengineJs.includes('onaudioprocess'));
+test('Volcengine ASR 支持流式传输', volcengineJs.includes('onframe'));
 test('Volcengine ASR 处理 WebSocket 消息', volcengineJs.includes('onmessage'));
 test('Volcengine ASR 实现资源清理', volcengineJs.includes('cleanup'));
 test('Volcengine ASR 导出到 window.ASRVolcengine', volcengineJs.includes('window.ASRVolcengine'));
@@ -103,14 +120,14 @@ test('Tencent ASR 定义 ASRTencent 类', tencentJs.includes('class ASRTencent')
 test('Tencent ASR 使用 WebSocket', tencentJs.includes('WebSocket'));
 test('Tencent ASR 连接腾讯云端点', tencentJs.includes('asr.cloud.tencent.com'));
 test('Tencent ASR 使用 V2 端点', tencentJs.includes('wss://asr.cloud.tencent.com/asr/v2/'));
-test('Tencent ASR 使用 AudioContext', tencentJs.includes('AudioContext'));
-test('Tencent ASR 使用 getUserMedia', tencentJs.includes('getUserMedia'));
+test('Tencent ASR 通过 ASRCapture 采集音频', tencentJs.includes('ASRCapture'));
+test('Tencent ASR 支持电脑内录开关', tencentJs.includes('captureSystem'));
 test('Tencent ASR 实现 PCM 编码', tencentJs.includes('Int16Array') || tencentJs.includes('floatTo16BitPCM'));
 test('Tencent ASR 使用 HMAC-SHA1 签名', tencentJs.includes('HMAC') && tencentJs.includes('SHA-1'));
 test('Tencent ASR 对签名做 base64 编码', tencentJs.includes('btoa'));
 test('Tencent ASR 拼接签名原文', tencentJs.includes('asr.cloud.tencent.com/asr/v2/'));
 test('Tencent ASR 发送 URL 编码签名', tencentJs.includes('encodeURIComponent'));
-test('Tencent ASR 发送裸 PCM 二进制数据', tencentJs.includes('pcmData.buffer'));
+test('Tencent ASR 发送裸 PCM 二进制数据', tencentJs.includes('floatTo16BitPCM(inputData).buffer'));
 test('Tencent ASR 解析 V2 sentences 结果', tencentJs.includes('sentences'));
 test('Tencent ASR 支持说话人分离', tencentJs.includes('speaker_id'));
 test('Tencent ASR 发送结束消息', tencentJs.includes("type: 'end'"));
@@ -126,8 +143,8 @@ const alicloudJs = fs.readFileSync(path.join(asrRoot, 'asr-alicloud.js'), 'utf8'
 test('Alicloud ASR 定义 ASRAlicloud 类', alicloudJs.includes('class ASRAlicloud'));
 test('Alicloud ASR 使用 WebSocket', alicloudJs.includes('WebSocket'));
 test('Alicloud ASR 连接阿里云端点', alicloudJs.includes('nls-gateway'));
-test('Alicloud ASR 使用 AudioContext', alicloudJs.includes('AudioContext'));
-test('Alicloud ASR 使用 getUserMedia', alicloudJs.includes('getUserMedia'));
+test('Alicloud ASR 通过 ASRCapture 采集音频', alicloudJs.includes('ASRCapture'));
+test('Alicloud ASR 支持电脑内录开关', alicloudJs.includes('captureSystem'));
 test('Alicloud ASR 实现 PCM 编码', alicloudJs.includes('Int16Array') || alicloudJs.includes('floatTo16BitPCM'));
 test('Alicloud ASR 处理 WebSocket 消息', alicloudJs.includes('onmessage'));
 test('Alicloud ASR 实现资源清理', alicloudJs.includes('cleanup'));
@@ -163,12 +180,17 @@ test('Meetings 处理 ASR 错误回调', meetingsJs.includes('onError'));
 test('Meetings 处理 ASR 状态变化', meetingsJs.includes('onStatusChange'));
 test('Meetings 添加 ASR 设置按钮', meetingsJs.includes('asr-settings'));
 test('Meetings 显示当前 ASR 引擎', meetingsJs.includes('providerName'));
+test('Meetings 支持内录开关', meetingsJs.includes('captureSystem'));
+test('Meetings 新建会议可勾选电脑内录', meetingsJs.includes('meetingCaptureSystem'));
+test('Meetings 会议中可切换内录', meetingsJs.includes('toggleCaptureSystem'));
+test('Meetings 处理内录告警回调', meetingsJs.includes('onWarning'));
 
 console.log('\n--- index.html 集成测试 ---\n');
 
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 
 test('HTML 加载 asr-provider.js', html.includes('js/asr/asr-provider.js'));
+test('HTML 加载 asr-capture.js', html.includes('js/asr/asr-capture.js'));
 test('HTML 加载 asr-browser.js', html.includes('js/asr/asr-browser.js'));
 test('HTML 加载 asr-volcengine.js', html.includes('js/asr/asr-volcengine.js'));
 test('HTML 加载 asr-tencent.js', html.includes('js/asr/asr-tencent.js'));

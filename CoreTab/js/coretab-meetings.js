@@ -23,6 +23,8 @@
     recognizing: false,
     interim: null,
     asrError: null,
+    asrNotice: null,
+    captureSystem: true,
     currentSpeaker: 'Speaker',
     analysisEngine: null,
     aiProvider: null
@@ -240,6 +242,8 @@
     },
 
     createDialog() {
+      const asr = Storage.getASRSettings();
+      const canSystemCapture = state.hasASR && asr.provider !== 'browser';
       return `
         <div class="ws-dialog-head">
           <div>
@@ -250,6 +254,13 @@
         </div>
         <form id="meetingForm">
           <label>会议名称<input id="meetingTitleInput" maxlength="100" placeholder="例如：产品评审会" autofocus></label>
+          ${canSystemCapture ? `
+          <label class="meeting-capture-option">
+            <input type="checkbox" id="meetingCaptureSystem" ${state.captureSystem ? 'checked' : ''}>
+            <span>同时录制电脑声音（内录），与麦克风一起识别</span>
+          </label>
+          <p class="meeting-capture-hint">开启后会弹出共享窗口：选择要录制的屏幕 / 窗口 / 标签页，并勾选「分享系统音频」或「分享标签页音频」。</p>
+          ` : ''}
           <div class="ws-dialog-actions">
             <button type="button" class="ws-btn" data-ws-close>取消</button>
             <button type="submit" class="ws-btn primary">开始会议</button>
@@ -298,6 +309,7 @@
             <div class="meeting-timer">${icon('clock')}<span id="meetingTimer">0:00</span></div>
           </div>
           <div class="meeting-header-actions">
+            ${state.hasASR ? `<button class="ws-btn" data-m-action="toggle-system" id="meetingCaptureBtn">${icon('mic')}电脑内录：${state.captureSystem ? '开' : '关'}</button>` : ''}
             <button class="ws-btn" data-m-action="pause">${icon('pause')}暂停</button>
             <button class="ws-btn danger" data-m-action="end">${icon('stop')}结束会议</button>
           </div>
@@ -382,13 +394,18 @@
         }
       }
 
+      const captureBtn = el('#meetingCaptureBtn');
+      if (captureBtn) captureBtn.innerHTML = `${icon('mic')}电脑内录：${state.captureSystem ? '开' : '关'}`;
+
       const transcriptList = el('#transcriptList');
       if (transcriptList) {
         const items = state.active.transcript.map(t => Templates.transcriptItem(t));
         if (state.interim && state.interim.text) items.push(this.interimItem(state.interim));
         const fallback = state.asrError
           ? `<div class="transcript-placeholder ws-error">语音识别未启动：${esc(state.asrError)}</div>`
-          : '<div class="transcript-placeholder ws-muted">等待语音输入…也可以手动输入转写内容</div>';
+          : (state.asrNotice
+            ? `<div class="transcript-placeholder ws-notice">${esc(state.asrNotice)}</div>`
+            : '<div class="transcript-placeholder ws-muted">等待语音输入…也可以手动输入转写内容</div>');
         transcriptList.innerHTML = items.join('') || fallback;
       }
 
@@ -535,12 +552,14 @@
       const settings = Storage.getASRSettings();
       state.interim = null;
       state.asrError = null;
+      state.asrNotice = null;
       try {
         state.asrProvider = window.ASRProvider.create({
           provider: settings.provider,
           credentials: settings.credentials,
           model: settings.model,
           lang: settings.lang,
+          captureSystem: state.captureSystem && settings.provider !== 'browser',
           onResult: ({ text, isFinal, speaker }) => {
             if (!state.active || !text) return;
             const who = speaker || state.currentSpeaker;
@@ -560,6 +579,11 @@
             state.asrError = err.message;
             showToast('语音识别出错：' + err.message);
             this.stop();
+          },
+          onWarning: (msg) => {
+            state.asrNotice = msg;
+            showToast(msg);
+            Render.active();
           },
           onStatusChange: (status) => {
             state.recognizing = status === 'listening';
@@ -581,6 +605,7 @@
     stop() {
       state.recognizing = false;
       state.interim = null;
+      state.asrNotice = null;
       if (state.asrProvider) {
         state.asrProvider.stop();
         state.asrProvider = null;
@@ -767,6 +792,8 @@
         if (errorEl) errorEl.textContent = '会议名称不能为空';
         return;
       }
+      const captureInput = document.getElementById('meetingCaptureSystem');
+      if (captureInput) this.saveCaptureSystem(captureInput.checked);
       const now = Date.now();
       const meeting = {
         id: W.uuid(),
@@ -825,6 +852,26 @@
         ASR.stop();
       }
       Render.active();
+    },
+
+    toggleCaptureSystem() {
+      this.saveCaptureSystem(!state.captureSystem);
+      if (state.active && state.hasASR) {
+        ASR.stop();
+        ASR.start();
+      }
+      Render.active();
+      showToast(`电脑声音内录已${state.captureSystem ? '开启' : '关闭'}`);
+    },
+
+    // 记住内录开关，下次新建会议沿用
+    saveCaptureSystem(enabled) {
+      state.captureSystem = enabled === true;
+      if (window.ASRSettings) {
+        const settings = window.ASRSettings.load();
+        settings.captureSystem = state.captureSystem;
+        window.ASRSettings.save(settings);
+      }
     }
   };
 
@@ -984,6 +1031,9 @@
         case 'pause':
           Actions.handlePause(button);
           break;
+        case 'toggle-system':
+          Actions.toggleCaptureSystem();
+          break;
         case 'end':
           if (window.confirm(`结束会议"${state.active.title}"？\n时长：${Utils.formatDuration(state.elapsed)}\n\n结束后将保存完整记录。`)) {
             Actions.endMeeting();
@@ -1069,6 +1119,8 @@
     state.hasASR = asrSettings.provider === 'browser'
       ? !!(window.SpeechRecognition || window.webkitSpeechRecognition)
       : true;
+    // 内录默认开启（首次使用），之后以用户保存的开关为准
+    state.captureSystem = asrSettings.captureSystem !== false;
     const providerName = asrSettings.provider === 'browser'
       ? 'Web Speech API'
       : (window.ASRProvider?.getProviders?.()?.find(p => p.id === asrSettings.provider)?.name || asrSettings.provider);

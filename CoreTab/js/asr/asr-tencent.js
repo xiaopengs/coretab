@@ -35,13 +35,12 @@ const TENCENT_ERROR_HINTS = {
 class ASRTencent {
   constructor() {
     this.ws = null;
-    this.audioContext = null;
-    this.mediaStream = null;
-    this.processor = null;
-    this.silentGain = null;
+    this.capture = null;
+    this.captureSystem = false;
     this.onResult = () => {};
     this.onError = () => {};
     this.onStatusChange = () => {};
+    this.onWarning = () => {};
     this.credentials = {};
     this.model = '16k_zh_en_2.0';
     this.lang = 'zh-CN';
@@ -54,6 +53,7 @@ class ASRTencent {
     this.credentials = config.credentials || {};
     this.model = TENCENT_LEGACY_MODELS[config.model] || config.model || '16k_zh_en_2.0';
     this.lang = config.lang || 'zh-CN';
+    this.captureSystem = config.captureSystem === true;
 
     if (!this.credentials.secretId || !this.credentials.secretKey) {
       throw new Error('腾讯云配置不完整：需要 SecretId、SecretKey');
@@ -129,33 +129,22 @@ class ASRTencent {
       throw new Error('生成腾讯云签名失败：' + e.message);
     }
 
-    // 获取麦克风权限
+    // 采集音频：麦克风外录，并按需叠加电脑声音内录
+    this.capture = new window.ASRCapture();
+    this.capture.onframe = (inputData) => {
+      if (!this.handshakeDone || !this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+      this.ws.send(this.floatTo16BitPCM(inputData).buffer);
+    };
+    this.capture.onSystemEnded = () => {
+      this.onWarning('电脑声音共享已停止，继续使用麦克风识别');
+    };
     try {
-      this.mediaStream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          sampleRate: 16000,
-          channelCount: 1,
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
-        }
-      });
+      await this.capture.open({ mic: true, system: this.captureSystem });
     } catch (e) {
       this.onStatusChange('stopped');
-      throw new Error('无法获取麦克风权限：' + e.message);
+      throw new Error('无法获取音频来源：' + e.message);
     }
-
-    // 创建音频上下文（重采样到 16k，符合腾讯云要求）
-    this.audioContext = new AudioContext({ sampleRate: 16000 });
-    const source = this.audioContext.createMediaStreamSource(this.mediaStream);
-    this.processor = this.audioContext.createScriptProcessor(4096, 1, 1);
-
-    // 用零增益节点闭环，保证 onaudioprocess 触发，同时避免麦克风回放产生回声
-    this.silentGain = this.audioContext.createGain();
-    this.silentGain.gain.value = 0;
-    source.connect(this.processor);
-    this.processor.connect(this.silentGain);
-    this.silentGain.connect(this.audioContext.destination);
+    if (this.capture.warnings.length) this.onWarning(this.capture.warnings.join('；'));
 
     // 建立 WebSocket 连接
     this.ws = new WebSocket(url);
@@ -189,22 +178,11 @@ class ASRTencent {
     };
 
     this.ws.onclose = () => {
-      if (this.processor) {
-        try { this.processor.disconnect(); } catch (e) {}
-        this.processor = null;
-      }
+      if (this.capture) this.capture.close();
       if (!this.intentionalStop && !this.handshakeDone) {
         this.onError(new Error('腾讯云连接被关闭，请检查 AppID / 密钥是否正确'));
       }
       this.onStatusChange('stopped');
-    };
-
-    // 握手完成后持续发送二进制 PCM 帧（无额外帧头，直接发送裸 PCM）
-    this.processor.onaudioprocess = (event) => {
-      if (!this.handshakeDone || !this.ws || this.ws.readyState !== WebSocket.OPEN) return;
-      const inputData = event.inputBuffer.getChannelData(0);
-      const pcmData = this.floatTo16BitPCM(inputData);
-      this.ws.send(pcmData.buffer);
     };
   }
 
@@ -318,21 +296,9 @@ class ASRTencent {
   }
 
   cleanup() {
-    if (this.processor) {
-      try { this.processor.disconnect(); } catch (e) {}
-      this.processor = null;
-    }
-    if (this.silentGain) {
-      try { this.silentGain.disconnect(); } catch (e) {}
-      this.silentGain = null;
-    }
-    if (this.mediaStream) {
-      this.mediaStream.getTracks().forEach(track => track.stop());
-      this.mediaStream = null;
-    }
-    if (this.audioContext) {
-      try { this.audioContext.close(); } catch (e) {}
-      this.audioContext = null;
+    if (this.capture) {
+      this.capture.close();
+      this.capture = null;
     }
   }
 

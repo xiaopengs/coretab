@@ -8,9 +8,11 @@ class ASRProvider {
     this.credentials = config.credentials || {};
     this.model = config.model || '';
     this.lang = config.lang || 'zh-CN';
+    this.captureSystem = config.captureSystem === true;
     this.onResult = config.onResult || (() => {});
     this.onError = config.onError || (() => {});
     this.onStatusChange = config.onStatusChange || (() => {});
+    this.onWarning = config.onWarning || (() => {});
     this.impl = null;
   }
 
@@ -34,12 +36,14 @@ class ASRProvider {
     this.impl.onResult = this.onResult;
     this.impl.onError = this.onError;
     this.impl.onStatusChange = this.onStatusChange;
+    this.impl.onWarning = this.onWarning;
 
     // 初始化引擎
     await this.impl.init({
       credentials: this.credentials[this.provider] || {},
       model: this.model,
-      lang: this.lang
+      lang: this.lang,
+      captureSystem: this.captureSystem
     });
   }
 
